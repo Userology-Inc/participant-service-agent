@@ -1,0 +1,1 @@
+# Make worker directory a proper Python package 
