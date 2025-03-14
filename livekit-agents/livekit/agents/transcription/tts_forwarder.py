@@ -3,8 +3,8 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import time
-from dataclasses import dataclass
-from typing import Awaitable, Callable, Optional, Union
+from dataclasses import dataclass, field
+from typing import Awaitable, Callable, Optional, Union, List, Dict, Any, Literal
 
 from livekit import rtc
 from livekit.rtc.participant import PublishTranscriptionError
@@ -12,6 +12,7 @@ from livekit.rtc.participant import PublishTranscriptionError
 from .. import tokenize, utils
 from ..log import logger
 from ..tokenize.tokenizer import PUNCTUATIONS
+from ..types import Word, TimedTranscript
 from . import _utils
 
 # 3.83 is the "baseline", the number of hyphens per second TTS returns in avg.
@@ -146,6 +147,10 @@ class TTSSegmentsForwarder:
         self._audio_data: _AudioData | None = None
 
         self._played_text = ""
+        self._timed_transcript = TimedTranscript(
+            type="transcript",
+            role="assistant",
+        )
 
         self._main_atask: asyncio.Task | None = None
         self._task_set = utils.aio.TaskSet(loop)
@@ -216,12 +221,21 @@ class TTSSegmentsForwarder:
         self._text_data = None
 
     @property
-    def closed(self) -> bool:
-        return self._closed
-
-    @property
     def played_text(self) -> str:
         return self._played_text
+
+    @property
+    def timed_transcript(self) -> TimedTranscript:
+        """Get the current timed transcript"""
+        return self._timed_transcript
+    
+    def reset_timed_transcript(self) -> None:
+        """Reset the timed transcript for the next speech"""
+        self._timed_transcript = TimedTranscript()
+
+    @property
+    def closed(self) -> bool:
+        return self._closed
 
     async def aclose(self) -> None:
         if self._closed:
@@ -352,7 +366,13 @@ class TTSSegmentsForwarder:
         words = self._opts.word_tokenizer.tokenize(text=sentence)
         processed_words: list[str] = []
 
+        # Update the timed transcript start time if it's the first segment
+        if self._timed_transcript.start == 0.0:
+            self._timed_transcript.start = segment_start_time
+        
         og_text = self._played_text
+        word_start_times = {}
+        
         for word in words:
             if segment_index <= self._finshed_seg_index:
                 # playout of the audio segment already finished
@@ -388,6 +408,10 @@ class TTSSegmentsForwarder:
             else:
                 delay = word_hyphens / speed
 
+            # Record the start time for this word
+            word_start = time.time()
+            word_start_times[word] = word_start
+            
             first_delay = min(delay / 2, 2 / speed)
             await self._sleep_if_not_closed(first_delay)
 
@@ -406,6 +430,11 @@ class TTSSegmentsForwarder:
 
             await self._sleep_if_not_closed(delay - first_delay)
             text_data.forwarded_hyphens += word_hyphens
+            
+            # Record the end time for this word
+            word_end = time.time()
+            # Add the word to the timed transcript
+            self._timed_transcript.words.append(Word(text=word, start=word_start, end=word_end))
 
         rtc_seg_ch.send_nowait(
             rtc.TranscriptionSegment(
@@ -418,6 +447,10 @@ class TTSSegmentsForwarder:
             )
         )
         self._played_text = f"{og_text}{' ' if og_text else ''}{sentence}"
+        
+        # Update the timed transcript content and end time
+        self._timed_transcript.content = self._played_text
+        self._timed_transcript.end = time.time()
 
         await self._sleep_if_not_closed(self._opts.new_sentence_delay)
         text_data.forwarded_sentences += 1

@@ -1,0 +1,861 @@
+[
+  {
+    "type": "transcript",
+    "role": "assistant",
+    "content": "Sounds like you're having a good time.",
+    "start": 0.0,
+    "end": 1.6828596,
+    "words": [
+      {
+        "text": "Sounds",
+        "start": 0.0001218,
+        "end": 0.3208348
+      },
+      {
+        "text": "like",
+        "start": 0.3208499,
+        "end": 0.6424176
+      },
+      {
+        "text": "you're",
+        "start": 0.6424496,
+        "end": 0.9604971
+      },
+      {
+        "text": "having",
+        "start": 0.960546,
+        "end": 1.5976244
+      },
+      {
+        "text": "a",
+        "start": 1.5976562,
+        "end": 1.6828448
+      }
+    ]
+  },
+  {
+    "type": "transcript",
+    "role": "user",
+    "content": "(techno music)",
+    "start": 0.0,
+    "end": 0.0,
+    "words": []
+  },
+  {
+    "type": "transcript",
+    "role": "assistant",
+    "content": "Sounds like you got the beat.",
+    "start": 6.5759744,
+    "end": 9.0418834,
+    "words": [
+      {
+        "text": "Sounds",
+        "start": 6.5760624,
+        "end": 6.877896
+      },
+      {
+        "text": "like",
+        "start": 6.8779108,
+        "end": 7.4477464
+      },
+      {
+        "text": "you",
+        "start": 7.4477582,
+        "end": 8.0154743
+      },
+      {
+        "text": "got",
+        "start": 8.0154898,
+        "end": 8.4119656
+      },
+      {
+        "text": "the",
+        "start": 8.4119846,
+        "end": 8.7256654
+      },
+      {
+        "text": "beat.",
+        "start": 8.7257061,
+        "end": 9.0418646
+      }
+    ]
+  },
+  {
+    "type": "transcript",
+    "role": "user",
+    "content": "I got the-",
+    "start": 0.0,
+    "end": 0.0,
+    "words": []
+  },
+  {
+    "type": "transcript",
+    "role": "assistant",
+    "content": "Hi there.",
+    "start": 29.2917559,
+    "end": 29.9145944,
+    "words": [
+      {
+        "text": "Hi",
+        "start": 29.2921466,
+        "end": 29.6049844
+      },
+      {
+        "text": "there.",
+        "start": 29.605025,
+        "end": 29.9145758
+      }
+    ]
+  },
+  {
+    "type": "transcript",
+    "role": "user",
+    "content": "Hello? Hello. Hello.",
+    "start": 0.0,
+    "end": 0.0,
+    "words": []
+  },
+  {
+    "type": "transcript",
+    "role": "user",
+    "content": "\u0915\u0948\u0928 \u092f\u0941 \u0938\u094d\u092a\u0940\u0915 \u0938\u092e\u0925\u093f\u0902\u0917 \u0907\u0928 \u0905\u092c\u093e\u0909\u091f \u0939\u0902\u0921\u094d\u0930\u0947\u0921 \u0935\u0930\u094d\u0921\u094d\u0938?",
+    "start": 0.0,
+    "end": 0.0,
+    "words": []
+  },
+  {
+    "type": "transcript",
+    "role": "assistant",
+    "content": "\u0928\u092e\u0938\u094d\u0924\u0947, \u092e\u0948\u0902 \u0906\u092a\u0915\u0940 \u0938\u0947\u0935\u093e \u092e\u0947\u0902 \u0939\u0942\u0901\u0964 \u092e\u0948\u0902 \u0935\u093f\u092d\u093f\u0928\u094d\u0928 \u092d\u093e\u0937\u093e\u0913\u0902 \u092e\u0947\u0902 \u092c\u093e\u0924 \u0915\u0930 \u0938\u0915\u0924\u093e \u0939\u0942\u0901 \u0914\u0930 \u091c\u093e\u0928\u0915\u093e\u0930\u0940 \u092d\u0940 \u092a\u094d\u0930\u0926\u093e\u0928 \u0915\u0930 \u0938\u0915\u0924\u093e \u0939\u0942\u0901\u0964 \u0905\u0917\u0930 \u0906\u092a\u0915\u0947 \u0915\u094b\u0908 \u0938\u0935\u093e\u0932 \u0939\u0948\u0902 \u092f\u093e \u0906\u092a \u0915\u0941\u091b \u091c\u093e\u0928\u0928\u093e \u091a\u093e\u0939\u0924\u0947 \u0939\u0948\u0902 \u0924\u094b \u0915\u0943\u092a\u092f\u093e \u092a\u0942\u091b\u0947\u0902\u0964 \u092e\u0948\u0902 \u092f\u0939\u093e\u0901 \u092e\u0926\u0926 \u0915\u0930\u0928\u0947 \u0915\u0947 \u0932\u093f\u090f \u0939\u0942\u0901\u0964",
+    "start": 43.9263899,
+    "end": 56.2449731,
+    "words": [
+      {
+        "text": "\u0928\u092e\u0938\u094d\u0924\u0947,",
+        "start": 43.9264748,
+        "end": 44.247014
+      },
+      {
+        "text": "\u092e\u0948\u0902",
+        "start": 44.2470293,
+        "end": 44.5672831
+      },
+      {
+        "text": "\u0906\u092a\u0915\u0940",
+        "start": 44.5672957,
+        "end": 44.8750655
+      },
+      {
+        "text": "\u0938\u0947\u0935\u093e",
+        "start": 44.8750844,
+        "end": 45.1964018
+      },
+      {
+        "text": "\u092e\u0947\u0902",
+        "start": 45.1964192,
+        "end": 45.5347434
+      },
+      {
+        "text": "\u0939\u0942\u0901\u0964",
+        "start": 45.5347611,
+        "end": 45.8360526
+      },
+      {
+        "text": "\u092e\u0948\u0902",
+        "start": 45.8360664,
+        "end": 46.1546266
+      },
+      {
+        "text": "\u0935\u093f\u092d\u093f\u0928\u094d\u0928",
+        "start": 46.1546943,
+        "end": 46.4771084
+      },
+      {
+        "text": "\u092d\u093e\u0937\u093e\u0913\u0902",
+        "start": 46.4771447,
+        "end": 46.8061464
+      },
+      {
+        "text": "\u092e\u0947\u0902",
+        "start": 46.8061609,
+        "end": 47.1145834
+      },
+      {
+        "text": "\u092c\u093e\u0924",
+        "start": 47.1146018,
+        "end": 47.4381938
+      },
+      {
+        "text": "\u0915\u0930",
+        "start": 47.4382402,
+        "end": 47.7584767
+      },
+      {
+        "text": "\u0938\u0915\u0924\u093e",
+        "start": 47.7584924,
+        "end": 48.0800457
+      },
+      {
+        "text": "\u0939\u0942\u0901",
+        "start": 48.080064,
+        "end": 48.3945028
+      },
+      {
+        "text": "\u0914\u0930",
+        "start": 48.3945231,
+        "end": 48.7170438
+      },
+      {
+        "text": "\u091c\u093e\u0928\u0915\u093e\u0930\u0940",
+        "start": 48.7170806,
+        "end": 49.0350112
+      },
+      {
+        "text": "\u092d\u0940",
+        "start": 49.0350306,
+        "end": 49.3548434
+      },
+      {
+        "text": "\u092a\u094d\u0930\u0926\u093e\u0928",
+        "start": 49.3548882,
+        "end": 49.6887402
+      },
+      {
+        "text": "\u0915\u0930",
+        "start": 49.6887552,
+        "end": 49.9947474
+      },
+      {
+        "text": "\u0938\u0915\u0924\u093e",
+        "start": 49.9947681,
+        "end": 50.3145256
+      },
+      {
+        "text": "\u0939\u0942\u0901\u0964",
+        "start": 50.3145477,
+        "end": 50.6347174
+      },
+      {
+        "text": "\u0905\u0917\u0930",
+        "start": 50.6347379,
+        "end": 50.956511
+      },
+      {
+        "text": "\u0906\u092a\u0915\u0947",
+        "start": 50.9565255,
+        "end": 51.2839589
+      },
+      {
+        "text": "\u0915\u094b\u0908",
+        "start": 51.283976,
+        "end": 51.6015914
+      },
+      {
+        "text": "\u0938\u0935\u093e\u0932",
+        "start": 51.6016109,
+        "end": 51.9202218
+      },
+      {
+        "text": "\u0939\u0948\u0902",
+        "start": 51.9202374,
+        "end": 52.2364361
+      },
+      {
+        "text": "\u092f\u093e",
+        "start": 52.2364524,
+        "end": 52.55449
+      },
+      {
+        "text": "\u0906\u092a",
+        "start": 52.554511,
+        "end": 52.8945801
+      },
+      {
+        "text": "\u0915\u0941\u091b",
+        "start": 52.894597,
+        "end": 53.1958582
+      },
+      {
+        "text": "\u091c\u093e\u0928\u0928\u093e",
+        "start": 53.1958916,
+        "end": 53.5145709
+      },
+      {
+        "text": "\u091a\u093e\u0939\u0924\u0947",
+        "start": 53.514605,
+        "end": 53.8348641
+      },
+      {
+        "text": "\u0939\u0948\u0902",
+        "start": 53.8348846,
+        "end": 54.318783
+      },
+      {
+        "text": "\u0924\u094b",
+        "start": 54.3188006,
+        "end": 54.6371595
+      },
+      {
+        "text": "\u0915\u0943\u092a\u092f\u093e",
+        "start": 54.6372014,
+        "end": 54.9594738
+      },
+      {
+        "text": "\u092a\u0942\u091b\u0947\u0902\u0964",
+        "start": 54.9595094,
+        "end": 55.274785
+      },
+      {
+        "text": "\u092e\u0948\u0902",
+        "start": 55.2748072,
+        "end": 55.5963284
+      },
+      {
+        "text": "\u092f\u0939\u093e\u0901",
+        "start": 55.5963456,
+        "end": 55.9183001
+      },
+      {
+        "text": "\u092e\u0926\u0926",
+        "start": 55.9183194,
+        "end": 56.2403848
+      },
+      {
+        "text": "\u0915\u0930\u0928\u0947",
+        "start": 56.240401,
+        "end": 56.2449677
+      }
+    ]
+  },
+  {
+    "type": "transcript",
+    "role": "user",
+    "content": "Can you speak something in 50 words in English?",
+    "start": 0.0,
+    "end": 0.0,
+    "words": []
+  },
+  {
+    "type": "transcript",
+    "role": "assistant",
+    "content": "I can definitely speak something in about 50 words. Is there anything specific you'd like me to talk about? Perhaps you have a topic in mind or a question you'd like me to answer, I am ready when you are, just let me know, I'm happy to help.",
+    "start": 72.1631344,
+    "end": 85.4365272,
+    "words": [
+      {
+        "text": "I",
+        "start": 72.1632127,
+        "end": 72.4746751
+      },
+      {
+        "text": "can",
+        "start": 72.4746906,
+        "end": 72.976603
+      },
+      {
+        "text": "definitely",
+        "start": 72.9767104,
+        "end": 74.0750734
+      },
+      {
+        "text": "speak",
+        "start": 74.0751662,
+        "end": 74.3987221
+      },
+      {
+        "text": "something",
+        "start": 74.3987764,
+        "end": 74.9762008
+      },
+      {
+        "text": "in",
+        "start": 74.9762179,
+        "end": 75.2751267
+      },
+      {
+        "text": "about",
+        "start": 75.275171,
+        "end": 75.5957
+      },
+      {
+        "text": "50",
+        "start": 75.5957162,
+        "end": 75.9282112
+      },
+      {
+        "text": "words.",
+        "start": 75.928241,
+        "end": 76.5560604
+      },
+      {
+        "text": "Is",
+        "start": 76.957216,
+        "end": 76.9575481
+      },
+      {
+        "text": "there",
+        "start": 76.9575736,
+        "end": 76.9576487
+      },
+      {
+        "text": "anything",
+        "start": 76.9576654,
+        "end": 76.9577286
+      },
+      {
+        "text": "specific",
+        "start": 76.9577577,
+        "end": 76.9578046
+      },
+      {
+        "text": "you'd",
+        "start": 76.9578161,
+        "end": 77.1995356
+      },
+      {
+        "text": "like",
+        "start": 77.1995594,
+        "end": 77.4368996
+      },
+      {
+        "text": "me",
+        "start": 77.4369189,
+        "end": 77.679532
+      },
+      {
+        "text": "to",
+        "start": 77.6795497,
+        "end": 77.9149191
+      },
+      {
+        "text": "talk",
+        "start": 77.9149363,
+        "end": 78.15489
+      },
+      {
+        "text": "about?",
+        "start": 78.1549401,
+        "end": 78.3781569
+      },
+      {
+        "text": "Perhaps",
+        "start": 78.796549,
+        "end": 79.2795147
+      },
+      {
+        "text": "you",
+        "start": 79.2795372,
+        "end": 79.2819344
+      },
+      {
+        "text": "have",
+        "start": 79.2819509,
+        "end": 79.4510197
+      },
+      {
+        "text": "a",
+        "start": 79.4510402,
+        "end": 79.6760852
+      },
+      {
+        "text": "topic",
+        "start": 79.6761504,
+        "end": 80.1557754
+      },
+      {
+        "text": "in",
+        "start": 80.1557996,
+        "end": 80.3249784
+      },
+      {
+        "text": "mind",
+        "start": 80.3249948,
+        "end": 80.4974722
+      },
+      {
+        "text": "or",
+        "start": 80.4974877,
+        "end": 80.7240204
+      },
+      {
+        "text": "a",
+        "start": 80.7240454,
+        "end": 80.8936252
+      },
+      {
+        "text": "question",
+        "start": 80.8936812,
+        "end": 81.5172644
+      },
+      {
+        "text": "you'd",
+        "start": 81.5173074,
+        "end": 81.6867523
+      },
+      {
+        "text": "like",
+        "start": 81.6867724,
+        "end": 81.8554022
+      },
+      {
+        "text": "me",
+        "start": 81.8554214,
+        "end": 82.0800225
+      },
+      {
+        "text": "to",
+        "start": 82.0800494,
+        "end": 82.2499272
+      },
+      {
+        "text": "answer,",
+        "start": 82.249978,
+        "end": 82.7177651
+      },
+      {
+        "text": "I",
+        "start": 82.717786,
+        "end": 82.8863511
+      },
+      {
+        "text": "am",
+        "start": 82.8863674,
+        "end": 83.0556994
+      },
+      {
+        "text": "ready",
+        "start": 83.0557464,
+        "end": 83.2853601
+      },
+      {
+        "text": "when",
+        "start": 83.285377,
+        "end": 83.4545729
+      },
+      {
+        "text": "you",
+        "start": 83.4545914,
+        "end": 83.6750324
+      },
+      {
+        "text": "are,",
+        "start": 83.6750516,
+        "end": 83.8444609
+      },
+      {
+        "text": "just",
+        "start": 83.8444844,
+        "end": 84.315027
+      },
+      {
+        "text": "let",
+        "start": 84.3150504,
+        "end": 84.3200233
+      },
+      {
+        "text": "me",
+        "start": 84.3200416,
+        "end": 84.4889364
+      },
+      {
+        "text": "know,",
+        "start": 84.4890224,
+        "end": 84.7162244
+      },
+      {
+        "text": "I'm",
+        "start": 84.7162461,
+        "end": 84.8855234
+      },
+      {
+        "text": "happy",
+        "start": 84.8855636,
+        "end": 85.4365129
+      }
+    ]
+  },
+  {
+    "type": "transcript",
+    "role": "user",
+    "content": "Just speak about life, kitten. About hundred to two hundred words.",
+    "start": 0.0,
+    "end": 0.0,
+    "words": []
+  },
+  {
+    "type": "transcript",
+    "role": "assistant",
+    "content": "Life is a wild ride, a mix of ups and downs, sunshine and storms. It's about finding joy in small moments, learning from stumbles, and connecting with others. Cherish the good times, and remember that even tough times can make you stronger. Embrace the experiences, and enjoy the journey kitten.",
+    "start": 102.8989887,
+    "end": 121.75882,
+    "words": [
+      {
+        "text": "Life",
+        "start": 102.8990494,
+        "end": 103.2927439
+      },
+      {
+        "text": "is",
+        "start": 103.2927572,
+        "end": 103.6053424
+      },
+      {
+        "text": "a",
+        "start": 103.6053584,
+        "end": 103.9247954
+      },
+      {
+        "text": "wild",
+        "start": 103.9248097,
+        "end": 104.2371077
+      },
+      {
+        "text": "ride,",
+        "start": 104.2371397,
+        "end": 104.5557601
+      },
+      {
+        "text": "a",
+        "start": 104.5557782,
+        "end": 104.8761551
+      },
+      {
+        "text": "mix",
+        "start": 104.8761715,
+        "end": 105.1947496
+      },
+      {
+        "text": "of",
+        "start": 105.1948264,
+        "end": 105.5172388
+      },
+      {
+        "text": "ups",
+        "start": 105.5172536,
+        "end": 105.8378294
+      },
+      {
+        "text": "and",
+        "start": 105.8378496,
+        "end": 106.1564159
+      },
+      {
+        "text": "downs,",
+        "start": 106.1564695,
+        "end": 106.7960384
+      },
+      {
+        "text": "sunshine",
+        "start": 106.7961274,
+        "end": 107.3547077
+      },
+      {
+        "text": "and",
+        "start": 107.3547234,
+        "end": 107.6746064
+      },
+      {
+        "text": "storms.",
+        "start": 107.6746692,
+        "end": 108.2356712
+      },
+      {
+        "text": "It's",
+        "start": 108.6407468,
+        "end": 108.6413877
+      },
+      {
+        "text": "about",
+        "start": 108.6414151,
+        "end": 108.6416211
+      },
+      {
+        "text": "finding",
+        "start": 108.6418894,
+        "end": 108.80233
+      },
+      {
+        "text": "joy",
+        "start": 108.8023531,
+        "end": 109.274575
+      },
+      {
+        "text": "in",
+        "start": 109.2745984,
+        "end": 109.4372556
+      },
+      {
+        "text": "small",
+        "start": 109.4372984,
+        "end": 109.6040814
+      },
+      {
+        "text": "moments,",
+        "start": 109.6041479,
+        "end": 110.3196239
+      },
+      {
+        "text": "learning",
+        "start": 110.3196934,
+        "end": 110.794548
+      },
+      {
+        "text": "from",
+        "start": 110.794568,
+        "end": 110.9547112
+      },
+      {
+        "text": "stumbles,",
+        "start": 110.954777,
+        "end": 111.6210094
+      },
+      {
+        "text": "and",
+        "start": 111.6210277,
+        "end": 111.7578666
+      },
+      {
+        "text": "connecting",
+        "start": 111.7579312,
+        "end": 112.716166
+      },
+      {
+        "text": "with",
+        "start": 112.7161854,
+        "end": 112.8793737
+      },
+      {
+        "text": "others.",
+        "start": 112.879451,
+        "end": 113.5945882
+      },
+      {
+        "text": "Cherish",
+        "start": 113.9996936,
+        "end": 114.6346192
+      },
+      {
+        "text": "the",
+        "start": 114.635904,
+        "end": 114.9548264
+      },
+      {
+        "text": "good",
+        "start": 114.9548478,
+        "end": 114.9619159
+      },
+      {
+        "text": "times,",
+        "start": 114.9619612,
+        "end": 115.2746238
+      },
+      {
+        "text": "and",
+        "start": 115.2746887,
+        "end": 115.5954582
+      },
+      {
+        "text": "remember",
+        "start": 115.5955109,
+        "end": 116.4852387
+      },
+      {
+        "text": "that",
+        "start": 116.4852607,
+        "end": 116.8076548
+      },
+      {
+        "text": "even",
+        "start": 116.8076758,
+        "end": 116.8151736
+      },
+      {
+        "text": "tough",
+        "start": 116.8152184,
+        "end": 117.114732
+      },
+      {
+        "text": "times",
+        "start": 117.1147806,
+        "end": 117.4345184
+      },
+      {
+        "text": "can",
+        "start": 117.434544,
+        "end": 117.7625916
+      },
+      {
+        "text": "make",
+        "start": 117.7626114,
+        "end": 118.0757665
+      },
+      {
+        "text": "you",
+        "start": 118.075792,
+        "end": 118.3957986
+      },
+      {
+        "text": "stronger.",
+        "start": 118.3958618,
+        "end": 118.7212804
+      },
+      {
+        "text": "Embrace",
+        "start": 119.1225494,
+        "end": 119.6001344
+      },
+      {
+        "text": "the",
+        "start": 119.6001577,
+        "end": 119.7555182
+      },
+      {
+        "text": "experiences,",
+        "start": 119.755604,
+        "end": 120.7177686
+      },
+      {
+        "text": "and",
+        "start": 120.7177864,
+        "end": 121.1958088
+      },
+      {
+        "text": "enjoy",
+        "start": 121.1958599,
+        "end": 121.6792731
+      },
+      {
+        "text": "the",
+        "start": 121.6793012,
+        "end": 121.7588081
+      }
+    ]
+  },
+  {
+    "type": "transcript",
+    "role": "assistant",
+    "content": "You're welcome.",
+    "start": 130.9023628,
+    "end": 131.7732224,
+    "words": [
+      {
+        "text": "You're",
+        "start": 130.9024367,
+        "end": 131.1989119
+      },
+      {
+        "text": "welcome.",
+        "start": 131.1989594,
+        "end": 131.7732076
+      }
+    ]
+  },
+  {
+    "type": "transcript",
+    "role": "user",
+    "content": "Thank you.",
+    "start": 0.0,
+    "end": 0.0,
+    "words": []
+  }
+]

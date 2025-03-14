@@ -275,7 +275,7 @@ class Worker(utils.EventEmitter[EventTypes]):
             self._inference_executor = (
                 ipc.inference_proc_executor.InferenceProcExecutor(
                     runners=_InferenceRunner.registered_runners,
-                    initialize_timeout=30,
+                    initialize_timeout=60,
                     close_timeout=5,
                     memory_warn_mb=2000,
                     memory_limit_mb=0,  # no limit

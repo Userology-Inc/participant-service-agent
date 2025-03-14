@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Literal, TypeVar, Union
+from dataclasses import dataclass, field
+from typing import Literal, TypeVar, Union, List
 
 AgentState = Union[Literal["initializing", "listening", "thinking", "speaking"], str]
 ATTRIBUTE_AGENT_STATE = "lk.agent.state"
@@ -28,6 +28,25 @@ class NotGiven:
 
 NotGivenOr = Union[_T, NotGiven]
 NOT_GIVEN = NotGiven()
+
+
+@dataclass
+class Word:
+    """Represents a word with timing information"""
+    text: str
+    start: float
+    end: float
+
+
+@dataclass
+class TimedTranscript:
+    """Represents a transcript with timing information"""
+    type: str = "transcript"
+    role: Literal["assistant", "user"] = "assistant"
+    content: str = ""
+    start: float = 0.0
+    end: float = 0.0
+    words: List[Word] = field(default_factory=list)
 
 
 @dataclass(frozen=True)

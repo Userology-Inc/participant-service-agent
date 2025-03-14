@@ -938,7 +938,12 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
                 if interrupted:
                     self.emit("agent_speech_interrupted", msg)
                 else:
-                    self.emit("agent_speech_committed", msg)
+                    # Get the timed transcript from the forwarder
+                    timed_transcript = speech_handle.synthesis_handle.tts_forwarder.timed_transcript
+                    # Emit both the message and the timed transcript
+                    self.emit("agent_speech_committed", msg, timed_transcript)
+                    # Reset the timed transcript for the next speech
+                    speech_handle.synthesis_handle.tts_forwarder.reset_timed_transcript()
 
                 logger.debug(
                     "committed agent speech",

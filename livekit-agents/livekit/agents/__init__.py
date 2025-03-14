@@ -44,6 +44,8 @@ from .types import (
     APIConnectOptions,
     NotGiven,
     NotGivenOr,
+    Word,
+    TimedTranscript,
 )
 from .version import __version__
 from .worker import Worker, WorkerOptions, WorkerPermissions, WorkerType
@@ -86,6 +88,8 @@ __all__ = [
     "NotGiven",
     "NOT_GIVEN",
     "NotGivenOr",
+    "Word",
+    "TimedTranscript",
 ]
 
 # Cleanup docs of unexported modules
