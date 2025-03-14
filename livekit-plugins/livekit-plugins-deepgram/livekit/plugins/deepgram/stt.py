@@ -675,7 +675,7 @@ def live_transcription_to_speech_data(
     language: str, data: dict
 ) -> List[stt.SpeechData]:
     dg_alts = data["channel"]["alternatives"]
-
+    print(f"dg_alts: {dg_alts}")
     return [
         stt.SpeechData(
             language=language,
@@ -683,6 +683,17 @@ def live_transcription_to_speech_data(
             end_time=alt["words"][-1]["end"] if alt["words"] else 0,
             confidence=alt["confidence"],
             text=alt["transcript"],
+            # words=alt["words"],
+            words=[
+                stt.SpeechWord(
+                    text=word["word"],
+                    start=word["start"],
+                    end=word["end"],
+                    confidence=word["confidence"],
+                    # !Deepgram provide puntuated word! Didn't use it
+                )
+            ]
+
         )
         for alt in dg_alts
     ]

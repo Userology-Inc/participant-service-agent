@@ -33,6 +33,22 @@ class SpeechEventType(str, Enum):
     END_OF_SPEECH = "end_of_speech"
     """indicate the end of speech, emitted when the user stops speaking"""
 
+@dataclass
+class SpeechCharacter:
+    text: str
+    start: typing.Optional[float] = None
+    end: typing.Optional[float] = None
+    confidence: typing.Optional[float] = None
+
+@dataclass
+class SpeechWord:
+    text: str
+    start:  typing.Optional[float] = None
+    end:  typing.Optional[float] = None
+    confidence: typing.Optional[float] = None
+    speaker_id: typing.Optional[str] = None
+    characters: typing.Optional[List[SpeechCharacter]] = None
+    type: typing.Optional[str] = None
 
 @dataclass
 class SpeechData:
@@ -40,7 +56,9 @@ class SpeechData:
     text: str
     start_time: float = 0.0
     end_time: float = 0.0
+    language_probability: float = None
     confidence: float = 0.0  # [0, 1]
+    words: List[SpeechWord] = field(default_factory=list)
 
 
 @dataclass
@@ -60,6 +78,7 @@ class SpeechEvent:
 class STTCapabilities:
     streaming: bool
     interim_results: bool
+    words: bool = False
 
 
 TEvent = TypeVar("TEvent")

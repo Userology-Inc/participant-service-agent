@@ -21,6 +21,7 @@ from livekit.agents import (
 from livekit.agents.pipeline import VoicePipelineAgent
 from livekit.plugins import silero, deepgram, elevenlabs
 from plugins import sarvam, portkey
+from plugins import elevenlabs as custom_elevenlabs
 
 
 load_dotenv()
@@ -48,26 +49,21 @@ async def entrypoint(ctx: JobContext):
     participant = await ctx.wait_for_participant()
     logger.info(f"starting voice assistant for participant {participant.identity}")
 
-    # Use Sarvam STT
-    stt_model = sarvam.STTModel.SAARIKA_V2
-    if participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP:
-        # use a model optimized for telephony if available
-        pass
-
-    # Create the agent with Sarvam TTS, STT and Portkey LLM
+    # Create the agent with ElevenLabs STT, Sarvam TTS and Portkey LLM
     agent = VoicePipelineAgent(
         vad=ctx.proc.userdata["vad"],
-        stt=sarvam.STT(model=stt_model),
+        stt=custom_elevenlabs.STT(),
         # stt=deepgram.STT(),
         llm=portkey.LLM(
             config='pc-modera-fc0ed1',
             metadata={"_user": "Livekit"}
         ),
-        tts=sarvam.TTS(
-            model=sarvam.TTSModel.BULBUL_V1,
-            speaker=sarvam.TTSSpeaker.MEERA,
-            language_code=sarvam.LanguageCode.ENGLISH
-        ),
+        # tts=sarvam.TTS(
+        #     model=sarvam.TTSModel.BULBUL_V1,
+        #     speaker=sarvam.TTSSpeaker.MEERA,
+        #     language_code=sarvam.LanguageCode.ENGLISH
+        # ),
+        tts=elevenlabs.TTS(),
         chat_ctx=initial_ctx,
     )
 

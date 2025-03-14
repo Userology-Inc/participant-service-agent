@@ -9,6 +9,8 @@ from .stt import (
     SpeechEventType,
     SpeechStream,
     STTCapabilities,
+    SpeechCharacter,
+    SpeechWord,
 )
 
 __all__ = [
@@ -24,4 +26,6 @@ __all__ = [
     "RecognitionUsage",
     "FallbackAdapter",
     "AvailabilityChangedEvent",
+    "SpeechCharacter",
+    "SpeechWord",
 ]
