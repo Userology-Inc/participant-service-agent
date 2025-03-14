@@ -637,59 +637,25 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
             )
             if(len(words)>0 ):
                 logger.info(f"words: printed in _on_final_transcript: {words}")
-                
-            # Create and emit word timing data if available
-            word_timings = None
-            start_time = None
-            end_time = None
-            
-            # Try to find word timing data for the current user question
-            try:
-                events_list = self._human_input._stored_events.get("final_transcript", [])
-            except AttributeError:
-                # Fallback for older versions or if the attribute doesn't exist
-                events_list = []
-                logger.warning("Could not access stored events in HumanInput. Word timing data will not be available.")
-                
-            for ev in events_list:
-                if ev.alternatives and ev.alternatives[0].text == new_transcript and ev.alternatives[0].words:
-                    word_timings = [
-                        {
-                            'text': word.text,
-                            'start': word.start,
-                            'end': word.end,
-                            'confidence': word.confidence
-                        }
-                        for word in ev.alternatives[0].words
-                    ]
-                    start_time = ev.alternatives[0].start_time
-                    end_time = ev.alternatives[0].end_time
-                    break
-
-            user_msg = ChatMessage.create(
-                text=new_transcript, 
-                role="user",
-                word_timings=word_timings,
-                start_time=start_time,
-                end_time=end_time
-            )
-            self._chat_ctx.messages.append(user_msg)
-            self.emit("user_speech_with_word_timings", word_timings)
-            logger.debug(
-                "user speech with word timings",
-                extra={"word_timing_data": word_timings},
-            )
-                
             if len(words) >= 3:
                 # VAD can sometimes not detect that the human is speaking
                 # to make the interruption more reliable, we also interrupt on the final transcript.
                 self._interrupt_if_possible()
+
+        def _on_user_speech_with_word_timings(word_timing_data: dict) -> None:
+            # Forward the event from HumanInput to the pipeline agent's listeners
+            self.emit("user_speech_with_word_timings", word_timing_data)
+            logger.debug(
+                "received user speech with word timings",
+                extra={"word_timing_data": word_timing_data},
+            )
 
         self._human_input.on("start_of_speech", _on_start_of_speech)
         self._human_input.on("vad_inference_done", _on_vad_inference_done)
         self._human_input.on("end_of_speech", _on_end_of_speech)
         self._human_input.on("interim_transcript", _on_interim_transcript)
         self._human_input.on("final_transcript", _on_final_transcript)
+        self._human_input.on("user_speech_with_word_timings", _on_user_speech_with_word_timings)
 
     @utils.log_exceptions(logger=logger)
     async def _main_task(self) -> None:
@@ -926,41 +892,7 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
             ):
                 return
 
-            # Check if we have word timing data for this user question
-            word_timings = None
-            start_time = None
-            end_time = None
-            
-            # Try to find word timing data for the current user question
-            try:
-                events_list = self._human_input._stored_events.get("final_transcript", [])
-            except AttributeError:
-                # Fallback for older versions or if the attribute doesn't exist
-                events_list = []
-                logger.warning("Could not access stored events in HumanInput. Word timing data will not be available.")
-                
-            for ev in events_list:
-                if ev.alternatives and ev.alternatives[0].text == user_question and ev.alternatives[0].words:
-                    word_timings = [
-                        {
-                            'text': word.text,
-                            'start': word.start,
-                            'end': word.end,
-                            'confidence': word.confidence
-                        }
-                        for word in ev.alternatives[0].words
-                    ]
-                    start_time = ev.alternatives[0].start_time
-                    end_time = ev.alternatives[0].end_time
-                    break
-
-            user_msg = ChatMessage.create(
-                text=user_question, 
-                role="user",
-                word_timings=word_timings,
-                start_time=start_time,
-                end_time=end_time
-            )
+            user_msg = ChatMessage.create(text=user_question, role="user")
             self._chat_ctx.messages.append(user_msg)
             self.emit("user_speech_committed", user_msg)
 
@@ -1009,32 +941,25 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
                 if interrupted:
                     collected_text += "..."
 
-                # Create word timing data for agent speech
-                word_timing_data = None
-                if hasattr(speech_handle.synthesis_handle.tts_forwarder, 'words_data') and speech_handle.synthesis_handle.tts_forwarder.words_data:
-                    word_timing_data = {
-                        'text': collected_text,
-                        'start_time': speech_handle.synthesis_handle.tts_forwarder.segment_start_time,
-                        'end_time': time.time(),
-                        'words': speech_handle.synthesis_handle.tts_forwarder.words_data
-                    }
-                    self.emit("agent_speech_with_word_timings", word_timing_data)
-                    logger.debug(
-                        "agent speech with word timings",
-                        extra={"agent_word_timing_data": word_timing_data},
-                    )
-
-                # Create the chat message with word timing information
-                msg = ChatMessage.create(
-                    text=collected_text, 
-                    role="assistant",
-                    word_timings=word_timing_data['words'] if word_timing_data else None,
-                    start_time=word_timing_data['start_time'] if word_timing_data else None,
-                    end_time=word_timing_data['end_time'] if word_timing_data else None
-                )
+                msg = ChatMessage.create(text=collected_text, role="assistant")
                 self._chat_ctx.messages.append(msg)
                 message_id_committed = msg.id
                 speech_handle.mark_speech_committed()
+
+                # Emit word timing data for agent speech
+                if hasattr(speech_handle.synthesis_handle.tts_forwarder, 'words_data') and speech_handle.synthesis_handle.tts_forwarder.words_data:
+                    # Create word timing data from TTS forwarder's word data
+                    agent_word_timing_data = {
+                        'text': collected_text,
+                        'start_time': speech_handle.synthesis_handle.tts_forwarder.segment_start_time if hasattr(speech_handle.synthesis_handle.tts_forwarder, 'segment_start_time') else 0,
+                        'end_time': time.time(),  # Current time as end time
+                        'words': speech_handle.synthesis_handle.tts_forwarder.words_data
+                    }
+                    self.emit("agent_speech_with_word_timings", agent_word_timing_data)
+                    logger.debug(
+                        "agent speech with word timings",
+                        extra={"agent_word_timing_data": agent_word_timing_data},
+                    )
 
                 if interrupted:
                     self.emit("agent_speech_interrupted", msg)
@@ -1234,7 +1159,8 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
             raise ValueError("before_tts_cb must return str or AsyncIterable[str]")
 
         try:
-            return self._agent_output.synthesize(
+            # When creating a new synthesis, we'll reset word timing data in the SynthesisHandle
+            synthesis_handle = self._agent_output.synthesize(
                 speech_id=speech_id,
                 tts_source=tts_source,
                 transcript_source=transcript_source,
@@ -1244,6 +1170,11 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
                 word_tokenizer=self._opts.transcription.word_tokenizer,
                 hyphenate_word=self._opts.transcription.hyphenate_word,
             )
+            # Ensure the tts_forwarder's words_data starts empty
+            if hasattr(synthesis_handle.tts_forwarder, 'words_data'):
+                synthesis_handle.tts_forwarder.words_data = []
+            
+            return synthesis_handle
         finally:
             SpeechDataContextVar.reset(tk)
 

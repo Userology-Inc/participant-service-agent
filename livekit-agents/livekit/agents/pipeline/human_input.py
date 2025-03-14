@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Literal
+from typing import Literal, Any
 
 from livekit import rtc
 
@@ -45,6 +45,16 @@ class HumanInput(utils.EventEmitter[EventTypes]):
         self._closed = False
         self._speaking = False
         self._speech_probability = 0.0
+
+        # Store events for later retrieval - using a dict of lists instead of modifying the EventEmitter
+        self._stored_events = {
+            "start_of_speech": [],
+            "vad_inference_done": [],
+            "end_of_speech": [],
+            "interim_transcript": [],
+            "final_transcript": [],
+        }
+        self._max_events_per_type = 100  # Limit the number of events stored
 
         self._room.on("track_published", self._subscribe_to_microphone)
         self._room.on("track_subscribed", self._subscribe_to_microphone)
@@ -132,25 +142,31 @@ class HumanInput(utils.EventEmitter[EventTypes]):
             async for ev in vad_stream:
                 if ev.type == voice_activity_detection.VADEventType.START_OF_SPEECH:
                     self._speaking = True
+                    self._add_event("start_of_speech", ev)
                     self.emit("start_of_speech", ev)
                     logger.info(f"start_of_speech: {ev}")
                 elif ev.type == voice_activity_detection.VADEventType.INFERENCE_DONE:
                     self._speech_probability = ev.probability
+                    self._add_event("vad_inference_done", ev)
                     self.emit("vad_inference_done", ev)
                 elif ev.type == voice_activity_detection.VADEventType.END_OF_SPEECH:
                     self._speaking = False
+                    self._add_event("end_of_speech", ev)
                     self.emit("end_of_speech", ev)
                     logger.info(f"end_of_speech: {ev}")
+
         async def _stt_stream_co() -> None:
             async for ev in stt_stream:
                 stt_forwarder.update(ev)
 
-                if ev.type == speech_to_text.SpeechEventType.FINAL_TRANSCRIPT:
-                    self.emit("final_transcript", ev)
-                    logger.info(f"final_transcript: {ev}")
-                elif ev.type == speech_to_text.SpeechEventType.INTERIM_TRANSCRIPT:
+                if ev.type == speech_to_text.SpeechEventType.INTERIM_TRANSCRIPT:
+                    self._add_event("interim_transcript", ev)
                     self.emit("interim_transcript", ev)
                     logger.info(f"interim_transcript: {ev}")
+                elif ev.type == speech_to_text.SpeechEventType.FINAL_TRANSCRIPT:
+                    self._add_event("final_transcript", ev)
+                    self.emit("final_transcript", ev)
+                    logger.info(f"final_transcript: {ev}")
 
         tasks = [
             asyncio.create_task(_audio_stream_co()),
@@ -165,3 +181,9 @@ class HumanInput(utils.EventEmitter[EventTypes]):
             await stt_forwarder.aclose()
             await stt_stream.aclose()
             await vad_stream.aclose()
+
+    def _add_event(self, event_type: str, event: Any) -> None:
+        """Add an event to the events store, limiting the size to prevent memory leaks."""
+        self._stored_events[event_type].append(event)
+        if len(self._stored_events[event_type]) > self._max_events_per_type:
+            self._stored_events[event_type] = self._stored_events[event_type][-self._max_events_per_type:]

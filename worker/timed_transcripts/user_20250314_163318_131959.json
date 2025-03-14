@@ -1,0 +1,25 @@
+{
+  "text": "It's audio.",
+  "start_time": 0.0,
+  "end_time": 0.0,
+  "words": [
+    {
+      "text": "It's",
+      "start": 0.0,
+      "end": 0.059,
+      "confidence": null
+    },
+    {
+      "text": " ",
+      "start": 0.059,
+      "end": 0.059,
+      "confidence": null
+    },
+    {
+      "text": "audio.",
+      "start": 0.059,
+      "end": 1.659,
+      "confidence": null
+    }
+  ]
+}

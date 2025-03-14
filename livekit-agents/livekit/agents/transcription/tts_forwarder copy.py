@@ -146,10 +146,10 @@ class TTSSegmentsForwarder:
         self._audio_data: _AudioData | None = None
 
         self._played_text = ""
-
-        # Add fields to track word timing information
+        
+        # Store word timing information
+        self.words_data = [] 
         self.segment_start_time = 0.0
-        self.words_data = []
 
         self._main_atask: asyncio.Task | None = None
         self._task_set = utils.aio.TaskSet(loop)
@@ -398,10 +398,10 @@ class TTSSegmentsForwarder:
 
             first_delay = min(delay / 2, 2 / speed)
             await self._sleep_if_not_closed(first_delay)
-            
+
             # Record word timing data
             word_start_time = time.time() - segment_start_time
-
+            
             rtc_seg_ch.send_nowait(
                 rtc.TranscriptionSegment(
                     id=seg_id,

@@ -102,6 +102,9 @@ class ChatMessage:
     tool_calls: list[function_context.FunctionCallInfo] | None = None
     tool_call_id: str | None = None
     tool_exception: Exception | None = None
+    word_timings: list[dict] | None = None  # Store word timing information
+    start_time: float | None = None  # Start time of the speech
+    end_time: float | None = None  # End time of the speech
     _metadata: dict[str, Any] = field(default_factory=dict, repr=False, init=False)
 
     @staticmethod
@@ -142,10 +145,14 @@ class ChatMessage:
         images: list[ChatImage] = [],
         role: ChatRole = "system",
         id: str | None = None,
+        word_timings: list[dict] | None = None,
+        start_time: float | None = None,
+        end_time: float | None = None,
     ) -> "ChatMessage":
         id = id or utils.shortuuid("item_")
         if len(images) == 0:
-            return ChatMessage(role=role, content=text, id=id)
+            return ChatMessage(role=role, content=text, id=id, word_timings=word_timings, 
+                              start_time=start_time, end_time=end_time)
         else:
             content: list[ChatContent] = []
             if text:
@@ -154,7 +161,8 @@ class ChatMessage:
             if len(images) > 0:
                 content.extend(images)
 
-            return ChatMessage(role=role, content=content, id=id)
+            return ChatMessage(role=role, content=content, id=id, word_timings=word_timings,
+                              start_time=start_time, end_time=end_time)
 
     def copy(self):
         content = self.content
@@ -164,6 +172,10 @@ class ChatMessage:
         tool_calls = self.tool_calls
         if tool_calls is not None:
             tool_calls = tool_calls.copy()
+            
+        word_timings = self.word_timings
+        if word_timings is not None:
+            word_timings = word_timings.copy()
 
         copied_msg = ChatMessage(
             role=self.role,
@@ -172,6 +184,9 @@ class ChatMessage:
             content=content,
             tool_calls=tool_calls,
             tool_call_id=self.tool_call_id,
+            word_timings=word_timings,
+            start_time=self.start_time,
+            end_time=self.end_time,
         )
         copied_msg._metadata = self._metadata
         return copied_msg
