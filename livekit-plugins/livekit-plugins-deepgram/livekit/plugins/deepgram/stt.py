@@ -686,12 +686,13 @@ def live_transcription_to_speech_data(
             # words=alt["words"],
             words=[
                 stt.SpeechWord(
-                    text=word["word"],
-                    start=word["start"],
-                    end=word["end"],
-                    confidence=word["confidence"],
+                    text=w["word"],
+                    start=w["start"],
+                    end=w["end"],
+                    confidence=w["confidence"],
                     # !Deepgram provide puntuated word! Didn't use it
                 )
+                for w in alt["words"]
             ]
 
         )

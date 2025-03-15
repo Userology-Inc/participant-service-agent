@@ -31,6 +31,10 @@ load_dotenv()
 
 logger = logging.getLogger("voice-assistant")
 
+# Create transcripts directory if it doesn't exist
+TRANSCRIPTS_DIR = "transcripts"
+os.makedirs(TRANSCRIPTS_DIR, exist_ok=True)
+
 
 def prewarm(proc: JobProcess):
     proc.userdata["vad"] = silero.VAD.load()
@@ -52,6 +56,10 @@ async def entrypoint(ctx: JobContext):
     participant = await ctx.wait_for_participant()
     logger.info(f"starting voice assistant for participant {participant.identity}")
 
+    # Create room-specific transcript file path
+    room_transcript_file = os.path.join(TRANSCRIPTS_DIR, f"{ctx.room.name}_transcripts.json")
+    room_log_file = os.path.join(TRANSCRIPTS_DIR, f"{ctx.room.name}_transcriptions.log")
+    
     # Create the agent with ElevenLabs STT, Sarvam TTS and Portkey LLM
     agent = VoicePipelineAgent(
         vad=ctx.proc.userdata["vad"],
@@ -67,6 +75,7 @@ async def entrypoint(ctx: JobContext):
         #     language_code=sarvam.LanguageCode.ENGLISH
         # ),
         tts=elevenlabs.TTS(),
+        # turn_detector=turn_detector.TurnDetector(),
         chat_ctx=initial_ctx,
     )
 
@@ -121,7 +130,7 @@ async def entrypoint(ctx: JobContext):
         # Add to agent's in-memory collection
         agent.timed_transcripts.append(timed_transcript)
         
-        # Write to the single timed transcript file
+        # Write to the room-specific transcript file
         await write_to_timed_transcript_file(timed_transcript)
         
         return timed_transcript
@@ -151,14 +160,14 @@ async def entrypoint(ctx: JobContext):
             # Add to agent's in-memory collection
             agent.timed_transcripts.append(timed_transcript)
             
-            # Write to the single timed transcript file
+            # Write to the room-specific transcript file
             asyncio.create_task(write_to_timed_transcript_file(timed_transcript))
         else:
             # If no timed transcript is available, create a basic one
             asyncio.create_task(add_to_timed_transcript("assistant", msg.content))
 
     async def write_transcription():
-        async with open("transcriptions.log", "w") as f:
+        async with open(room_log_file, "w") as f:
             while True:
                 msg = await log_queue.get()
                 if msg is None:
@@ -166,7 +175,7 @@ async def entrypoint(ctx: JobContext):
                 await f.write(msg)
 
     async def write_to_timed_transcript_file(timed_transcript):
-        """Write to the single timed transcript file."""
+        """Write to the room-specific transcript file."""
         # Convert TimedTranscript to a serializable dictionary
         transcript_dict = {
             "type": timed_transcript.type,
@@ -180,16 +189,16 @@ async def entrypoint(ctx: JobContext):
             ]
         }
         
-        # Always write to a single file: timed_transcripts.json
-        if not os.path.exists("timed_transcripts.json"):
+        # Always write to the room-specific file
+        if not os.path.exists(room_transcript_file):
             # Create the file with the first transcript
-            async with open("timed_transcripts.json", "w") as f:
+            async with open(room_transcript_file, "w") as f:
                 await f.write(json.dumps([transcript_dict], indent=2))
             return
         
         try:
             # Read existing content, add new transcript, write back
-            async with open("timed_transcripts.json", "r") as f:
+            async with open(room_transcript_file, "r") as f:
                 content = await f.read()
                 if content.strip():
                     transcripts = json.loads(content)
@@ -198,11 +207,11 @@ async def entrypoint(ctx: JobContext):
                 
                 transcripts.append(transcript_dict)
             
-            async with open("timed_transcripts.json", "w") as f:
+            async with open(room_transcript_file, "w") as f:
                 await f.write(json.dumps(transcripts, indent=2))
         except json.JSONDecodeError:
             # If file is corrupted, start fresh
-            async with open("timed_transcripts.json", "w") as f:
+            async with open(room_transcript_file, "w") as f:
                 await f.write(json.dumps([transcript_dict], indent=2))
 
     write_task = asyncio.create_task(write_transcription())
@@ -211,7 +220,7 @@ async def entrypoint(ctx: JobContext):
         log_queue.put_nowait(None)
         await write_task
         
-        # Write final version of all timed transcripts
+        # Write final version of all timed transcripts to room-specific file
         if agent.timed_transcripts:
             # Convert all TimedTranscript objects to serializable dictionaries
             serializable_transcripts = [
@@ -229,7 +238,7 @@ async def entrypoint(ctx: JobContext):
                 for tt in agent.timed_transcripts
             ]
             
-            async with open("timed_transcripts.json", "w") as f:
+            async with open(room_transcript_file, "w") as f:
                 await f.write(json.dumps(serializable_transcripts, indent=2))
 
     ctx.add_shutdown_callback(finish_queue)
