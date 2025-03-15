@@ -7,9 +7,14 @@ from worker.services.sarvam import (
     TTSModel,
     TTSSampleRate,
     TTSSpeaker,
+    TranslationMode,
+    SpeakerGender,
+    OutputScript,
+    NumeralsFormat,
 )
 from .stt import STT
 from .tts import TTS
+from .translator import Translator
 
 __all__ = [
     "LanguageCode",
@@ -19,4 +24,9 @@ __all__ = [
     "TTSModel",
     "TTSSampleRate",
     "TTSSpeaker",
+    "Translator",
+    "TranslationMode",
+    "SpeakerGender",
+    "OutputScript",
+    "NumeralsFormat",
 ] 

@@ -151,6 +151,8 @@ class HumanInput(utils.EventEmitter[EventTypes]):
                 elif ev.type == speech_to_text.SpeechEventType.INTERIM_TRANSCRIPT:
                     self.emit("interim_transcript", ev)
                     logger.info(f"interim_transcript: {ev}")
+                else:
+                    logger.info(f"stt_event, not specified: {ev}")
 
         tasks = [
             asyncio.create_task(_audio_stream_co()),
@@ -160,7 +162,6 @@ class HumanInput(utils.EventEmitter[EventTypes]):
         try:
             await asyncio.gather(*tasks)
         finally:
-            await utils.aio.gracefully_cancel(*tasks)
 
             await stt_forwarder.aclose()
             await stt_stream.aclose()

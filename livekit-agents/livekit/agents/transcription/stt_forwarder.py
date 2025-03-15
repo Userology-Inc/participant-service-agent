@@ -87,6 +87,25 @@ class STTSegmentsForwarder:
             logger.exception("error in stt transcription")
 
     def update(self, ev: stt.SpeechEvent):
+        # # Check if alternatives exist and is not empty
+        # if not ev.alternatives:
+        #     logger.warning("Received SpeechEvent with no alternatives")
+        #     return
+            
+        # # Get the first alternative
+        # alternative = ev.alternatives[0]
+        # if not alternative:
+        #     logger.warning("Received SpeechEvent with no alternative")
+        #     return
+        
+        # # Extract properties with null checks
+        # text = getattr(alternative, 'text', '')
+        # start_time = getattr(alternative, 'start_time', None)
+        # end_time = getattr(alternative, 'end_time', None)
+        # language = getattr(alternative, 'language', None)
+        # confidence = getattr(alternative, 'confidence', None)
+        # words = getattr(alternative, 'words', None)
+        
         if ev.type == stt.SpeechEventType.INTERIM_TRANSCRIPT:
             # TODO(theomonnom): We always take the first alternative, we should mb expose opt to the
             # user?
@@ -95,10 +114,10 @@ class STTSegmentsForwarder:
                 rtc.TranscriptionSegment(
                     id=self._current_id,
                     text=text,
-                    start_time=0,
+                    start_time= 0,
                     end_time=0,
                     final=False,
-                    language="",  # TODO
+                    language="language",
                 )
             )
         elif ev.type == stt.SpeechEventType.FINAL_TRANSCRIPT:
@@ -110,7 +129,7 @@ class STTSegmentsForwarder:
                     start_time=0,
                     end_time=0,
                     final=True,
-                    language="",  # TODO
+                    language="language",
                 )
             )
 

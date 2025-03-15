@@ -9,7 +9,13 @@ from .task_set import TaskSet
 
 
 async def gracefully_cancel(*futures: asyncio.Future):
-    loop = asyncio.get_running_loop()
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        # No running event loop, create a new one
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
     waiters = []
 
     for fut in futures:

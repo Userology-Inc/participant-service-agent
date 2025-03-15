@@ -135,6 +135,8 @@ class STT(stt.STT):
                     num_speakers=config.num_speakers,
                 )
                 
+                print("resp->", resp)
+
                 # Create speech event from response
                 return stt.SpeechEvent(
                     type=stt.SpeechEventType.FINAL_TRANSCRIPT,
@@ -142,6 +144,8 @@ class STT(stt.STT):
                         stt.SpeechData(
                             text=resp.transcript or "",
                             language=resp.language_code or str(config.language_code),
+                            # start_time=resp.timestamps.timestamps.start_time_seconds[0],
+                            # end_time=resp.timestamps.timestamps.end_time_seconds[0],
                         )
                     ],
                 )

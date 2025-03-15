@@ -235,7 +235,16 @@ class RecognizeStream(ABC):
 
         while num_retries <= max_retries:
             try:
-                return await self._run()
+                try:
+                    return await self._run()
+                except RuntimeError as e:
+                    if "no running event loop" in str(e):
+                        # Create a new event loop if there's no running event loop
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        return await self._run()
+                    else:
+                        raise
             except APIError as e:
                 if max_retries == 0:
                     raise

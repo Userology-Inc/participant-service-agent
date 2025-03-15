@@ -145,6 +145,56 @@ class STTResponse:
         return result
 
 
+class TranslationMode(str, Enum):
+    """Translation modes supported by Sarvam Translation API"""
+    FORMAL = "formal"
+    MODERN_COLLOQUIAL = "modern-colloquial"
+    CLASSIC_COLLOQUIAL = "classic-colloquial"
+    CODE_MIXED = "code-mixed"
+
+
+class SpeakerGender(str, Enum):
+    """Speaker gender options for translation"""
+    MALE = "Male"
+    FEMALE = "Female"
+
+
+class OutputScript(str, Enum):
+    """Output script options for translation"""
+    ROMAN = "roman"
+    FULLY_NATIVE = "fully-native"
+    SPOKEN_FORM_IN_NATIVE = "spoken-form-in-native"
+
+
+class NumeralsFormat(str, Enum):
+    """Numerals format options for translation"""
+    INTERNATIONAL = "international"
+    NATIVE = "native"
+
+
+class TranslationResponse:
+    """Translation response object"""
+    
+    def __init__(self, request_id: Optional[str], translated_text: str):
+        self.request_id = request_id
+        self.translated_text = translated_text
+    
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'TranslationResponse':
+        """Create a TranslationResponse instance from a dictionary"""
+        return cls(
+            request_id=data.get("request_id"),
+            translated_text=data.get("translated_text", "")
+        )
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the TranslationResponse instance to a dictionary"""
+        return {
+            "request_id": self.request_id,
+            "translated_text": self.translated_text
+        }
+
+
 class SarvamAI:
     """Client for the Sarvam.AI TTS and STT APIs"""
     
@@ -160,6 +210,83 @@ class SarvamAI:
         
         self.api_key = api_key
         self.base_url = base_url.rstrip('/')
+    
+    def translate_text(
+        self,
+        input_text: str,
+        source_language_code: LanguageCode,
+        target_language_code: LanguageCode,
+        speaker_gender: Optional[SpeakerGender] = None,
+        mode: Optional[TranslationMode] = None,
+        enable_preprocessing: Optional[bool] = None,
+        output_script: Optional[OutputScript] = None,
+        numerals_format: Optional[NumeralsFormat] = None
+    ) -> TranslationResponse:
+        """Translate text from one language to another
+        
+        Args:
+            input_text: The text to translate
+            source_language_code: The language code of the input text
+            target_language_code: The language code to translate to
+            speaker_gender: Gender of the speaker (for better translations)
+            mode: Translation mode (formal, modern-colloquial, etc.)
+            enable_preprocessing: Enable custom preprocessing of input text
+            output_script: Transliteration style for output text
+            numerals_format: Format for numerals in output text
+            
+        Returns:
+            TranslationResponse object containing the translated text
+            
+        Raises:
+            ValueError: For invalid parameter values
+            requests.RequestException: For API request failures
+        """
+        # Input validation
+        if not input_text:
+            raise ValueError("Input text is required")
+            
+        if len(input_text) > 1000:
+            raise ValueError("Input text should be no longer than 1000 characters")
+            
+        # Build request payload
+        payload = {
+            "input": input_text,
+            "source_language_code": source_language_code.value if isinstance(source_language_code, LanguageCode) else source_language_code,
+            "target_language_code": target_language_code.value if isinstance(target_language_code, LanguageCode) else target_language_code
+        }
+        
+        if speaker_gender is not None:
+            payload["speaker_gender"] = speaker_gender.value if isinstance(speaker_gender, SpeakerGender) else speaker_gender
+        if mode is not None:
+            payload["mode"] = mode.value if isinstance(mode, TranslationMode) else mode
+        if enable_preprocessing is not None:
+            payload["enable_preprocessing"] = enable_preprocessing
+        if output_script is not None:
+            payload["output_script"] = output_script.value if isinstance(output_script, OutputScript) else output_script
+        if numerals_format is not None:
+            payload["numerals_format"] = numerals_format.value if isinstance(numerals_format, NumeralsFormat) else numerals_format
+            
+        # Make API request
+        response = requests.post(
+            f"{self.base_url}/translate",
+            headers={
+                "api-subscription-key": self.api_key,
+                "Content-Type": "application/json"
+            },
+            json=payload
+        )
+        
+        # Handle errors
+        if not response.ok:
+            try:
+                error_data = response.json()
+                error_msg = f"Translation API error ({response.status_code}): {error_data}"
+            except:
+                error_msg = f"Translation API error ({response.status_code}): {response.text}"
+            raise requests.RequestException(error_msg)
+            
+        # Parse and return response
+        return TranslationResponse.from_dict(response.json())
     
     def text_to_speech(
         self,

@@ -41,33 +41,64 @@ def prewarm(proc: JobProcess):
 
 
 async def entrypoint(ctx: JobContext):
+    # Parse metadata from job
+    metadata = ctx.job.metadata
+    metadata = json.loads(metadata)
+    phone_number = metadata.get("phoneNumber", "")
+    language_code = metadata.get("language", "hi-IN")
+    
+    # Create a translator instance for translating system message and greeting
+    translator = sarvam.Translator()
+    
+    # Default system message in English
+    system_message = (
+        "You are a voice assistant created by LiveKit. Your interface with users will be voice. "
+        "You should use short and concise responses, and avoiding usage of unpronouncable punctuation."
+    )
+    
+    # Default greeting in English
+    greeting = "Hey, how can I help you today?"
+    
+    # Translate system message and greeting if language is not English
+    if language_code != "en-IN":
+        try:
+            # Translate system message
+            system_message = translator.translate(
+                text=system_message,
+                source_language="en-IN",
+                target_language=language_code
+            )
+            logger.info(f"Translated system message to {language_code}")
+            
+            # Translate greeting
+            greeting = translator.translate(
+                text=greeting,
+                source_language="en-IN",
+                target_language=language_code
+            )
+            logger.info(f"Translated greeting to {language_code}")
+        except Exception as e:
+            logger.error(f"Error translating messages: {e}")
+            # Fall back to English if translation fails
+    
+    # Create the initial context with the translated system message
     initial_ctx = llm.ChatContext().append(
         role="system",
-        text=(
-            "You are a voice assistant created by LiveKit. Your interface with users will be voice. "
-            "You should use short and concise responses, and avoiding usage of unpronouncable punctuation."
-        ),
+        text=system_message
     )
 
     logger.info(f"connecting to room {ctx.room.name}")
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
 
-    # phone_number = ctx.job.metadata
-    # logger.info(str(ctx.job))
-    metadata = ctx.job.metadata
-    metadata = json.loads(metadata)
-    phone_number = metadata.get("phoneNumber", "")
     print(metadata)
     print(phone_number)
     if phone_number != "":
         await ctx.api.sip.create_sip_participant(api.CreateSIPParticipantRequest(
             room_name=ctx.room.name,
-            sip_trunk_id="ST_RYmmweT8Xqj8",
+            sip_trunk_id=os.getenv("LIVEKIT_TRUNK_ID"),
             sip_call_to=phone_number,
             participant_identity="phone_user",
         ))
-    language_code=metadata.get("language", "hi-IN")
-
 
     # wait for the first participant to connect
     participant = await ctx.wait_for_participant()
@@ -291,7 +322,8 @@ async def entrypoint(ctx: JobContext):
 
     ctx.add_shutdown_callback(finish_queue)
 
-    await agent.say("Hey, how can I help you today?", allow_interruptions=True)
+    # Use the translated greeting
+    await agent.say(greeting, allow_interruptions=True)
 
 
 if __name__ == "__main__":
