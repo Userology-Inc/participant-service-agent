@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 import logging
 from dotenv import load_dotenv
-from livekit import rtc
+from livekit import rtc,api
 from livekit.agents import (
     AutoSubscribe,
     JobContext,
@@ -52,6 +52,23 @@ async def entrypoint(ctx: JobContext):
     logger.info(f"connecting to room {ctx.room.name}")
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
 
+    # phone_number = ctx.job.metadata
+    # logger.info(str(ctx.job))
+    metadata = ctx.job.metadata
+    metadata = json.loads(metadata)
+    phone_number = metadata.get("phoneNumber", "")
+    print(metadata)
+    print(phone_number)
+    if phone_number != "":
+        await ctx.api.sip.create_sip_participant(api.CreateSIPParticipantRequest(
+            room_name=ctx.room.name,
+            sip_trunk_id="ST_RYmmweT8Xqj8",
+            sip_call_to=phone_number,
+            participant_identity="phone_user",
+        ))
+    language_code=metadata.get("language", "hi-IN")
+
+
     # wait for the first participant to connect
     participant = await ctx.wait_for_participant()
     logger.info(f"starting voice assistant for participant {participant.identity}")
@@ -64,17 +81,21 @@ async def entrypoint(ctx: JobContext):
     agent = VoicePipelineAgent(
         vad=ctx.proc.userdata["vad"],
         # stt=custom_elevenlabs.STT(),
-        stt=deepgram.STT(),
+        # stt=deepgram.STT(),
+        stt=sarvam.STT(
+            model=sarvam.STTModel.SAARIKA_V2,
+            language_code=language_code
+        ),
         llm=portkey.LLM(
             config='pc-modera-fc0ed1',
             metadata={"_user": "Livekit"}
         ),
-        # tts=sarvam.TTS(
-        #     model=sarvam.TTSModel.BULBUL_V1,
-        #     speaker=sarvam.TTSSpeaker.MEERA,
-        #     language_code=sarvam.LanguageCode.ENGLISH
-        # ),
-        tts=elevenlabs.TTS(),
+        tts=sarvam.TTS(
+            model=sarvam.TTSModel.BULBUL_V1,
+            speaker=sarvam.TTSSpeaker.MEERA,
+            language_code=language_code
+        ),
+        # tts=elevenlabs.TTS(),
         # turn_detector=turn_detector.TurnDetector(),
         chat_ctx=initial_ctx,
     )
@@ -116,27 +137,31 @@ async def entrypoint(ctx: JobContext):
 
     # Function to add a transcript to the collection and write to file
     async def add_to_timed_transcript(role, content, start_time=None, end_time=None, words=None):
-        # Create a TimedTranscript object
-        timed_transcript = TimedTranscript(
-            type="transcript",
-            role=role,
-            content=content,
-            start=start_time or 0.0,
-            end=end_time or 0.0,
-            words=[Word(text=w["text"], start=w["start"], end=w["end"]) 
-                  for w in words] if isinstance(words, list) else []
-        )
-        
-        # Add to agent's in-memory collection
-        agent.timed_transcripts.append(timed_transcript)
-        
-        # Write to the room-specific transcript file
-        await write_to_timed_transcript_file(timed_transcript)
-        
-        return timed_transcript
+        try:
+            # Create a TimedTranscript object
+            timed_transcript = TimedTranscript(
+                type="transcript",
+                role=role,
+                content=content,
+                start=start_time or 0.0,
+                end=end_time or 0.0,
+                words=[Word(text=w["text"], start=w["start"], end=w["end"]) 
+                      for w in words] if isinstance(words, list) else []
+            )
+            
+            # Add to agent's in-memory collection
+            agent.timed_transcripts.append(timed_transcript)
+            
+            # Write to the room-specific transcript file
+            asyncio.create_task(write_to_timed_transcript_file(timed_transcript))
+            
+            return timed_transcript
+        except Exception as e:
+            logger.exception(f"Error creating timed transcript: {e}")
+            return None
 
     @agent.on("user_speech_committed")
-    def on_user_speech_committed(msg: llm.ChatMessage):
+    def on_user_speech_committed(msg: llm.ChatMessage, timed_transcript=None):
         # convert string lists to strings, drop images
         if isinstance(msg.content, list):
             msg.content = "\n".join(
@@ -145,26 +170,39 @@ async def entrypoint(ctx: JobContext):
         log_queue.put_nowait(f"[{datetime.now()}] USER:\n{msg.content}\n\n")
         
         # Add user message to timed transcript
-        asyncio.create_task(add_to_timed_transcript("user", msg.content))
+        try:
+            if timed_transcript:
+                # If we received a timed transcript, use it directly
+                agent.timed_transcripts.append(timed_transcript)
+                # Write to the room-specific transcript file
+                asyncio.create_task(write_to_timed_transcript_file(timed_transcript))
+            else:
+                # If no timed transcript is available, create a basic one
+                asyncio.create_task(add_to_timed_transcript("user", msg.content))
+        except Exception as e:
+            logger.exception(f"Error handling user timed transcript: {e}")
 
     @agent.on("agent_speech_committed")
     def on_agent_speech_committed(msg: llm.ChatMessage, timed_transcript=None):
         log_queue.put_nowait(f"[{datetime.now()}] AGENT:\n{msg.content}\n\n")
         
         # Log the timed transcript if available
-        if timed_transcript:
-            # The timed_transcript is already a TimedTranscript object, so we can use it directly
-            # Ensure role is explicitly set to assistant
-            timed_transcript.role = "assistant"
-            
-            # Add to agent's in-memory collection
-            agent.timed_transcripts.append(timed_transcript)
-            
-            # Write to the room-specific transcript file
-            asyncio.create_task(write_to_timed_transcript_file(timed_transcript))
-        else:
-            # If no timed transcript is available, create a basic one
-            asyncio.create_task(add_to_timed_transcript("assistant", msg.content))
+        try:
+            if timed_transcript:
+                # The timed_transcript is already a TimedTranscript object, so we can use it directly
+                # Ensure role is explicitly set to assistant
+                timed_transcript.role = "assistant"
+                
+                # Add to agent's in-memory collection
+                agent.timed_transcripts.append(timed_transcript)
+                
+                # Write to the room-specific transcript file
+                asyncio.create_task(write_to_timed_transcript_file(timed_transcript))
+            else:
+                # If no timed transcript is available, create a basic one
+                asyncio.create_task(add_to_timed_transcript("assistant", msg.content))
+        except Exception as e:
+            logger.exception(f"Error handling agent timed transcript: {e}")
 
     async def write_transcription():
         async with open(room_log_file, "w") as f:
@@ -176,43 +214,47 @@ async def entrypoint(ctx: JobContext):
 
     async def write_to_timed_transcript_file(timed_transcript):
         """Write to the room-specific transcript file."""
-        # Convert TimedTranscript to a serializable dictionary
-        transcript_dict = {
-            "type": timed_transcript.type,
-            "role": timed_transcript.role,
-            "content": timed_transcript.content,
-            "start": timed_transcript.start,
-            "end": timed_transcript.end,
-            "words": [
-                {"text": word.text, "start": word.start, "end": word.end}
-                for word in timed_transcript.words
-            ]
-        }
-        
-        # Always write to the room-specific file
-        if not os.path.exists(room_transcript_file):
-            # Create the file with the first transcript
-            async with open(room_transcript_file, "w") as f:
-                await f.write(json.dumps([transcript_dict], indent=2))
-            return
-        
         try:
-            # Read existing content, add new transcript, write back
-            async with open(room_transcript_file, "r") as f:
-                content = await f.read()
-                if content.strip():
-                    transcripts = json.loads(content)
-                else:
-                    transcripts = []
-                
-                transcripts.append(transcript_dict)
+            # Convert TimedTranscript to a serializable dictionary
+            transcript_dict = {
+                "type": timed_transcript.type,
+                "role": timed_transcript.role,
+                "content": timed_transcript.content,
+                "start": timed_transcript.start,
+                "end": timed_transcript.end,
+                "words": [
+                    {"text": word.text, "start": word.start, "end": word.end}
+                    for word in timed_transcript.words
+                ]
+            }
             
-            async with open(room_transcript_file, "w") as f:
-                await f.write(json.dumps(transcripts, indent=2))
-        except json.JSONDecodeError:
-            # If file is corrupted, start fresh
-            async with open(room_transcript_file, "w") as f:
-                await f.write(json.dumps([transcript_dict], indent=2))
+            # Always write to the room-specific file
+            if not os.path.exists(room_transcript_file):
+                # Create the file with the first transcript
+                async with open(room_transcript_file, "w") as f:
+                    await f.write(json.dumps([transcript_dict], indent=2))
+                return
+            
+            try:
+                # Read existing content, add new transcript, write back
+                async with open(room_transcript_file, "r") as f:
+                    content = await f.read()
+                    if content.strip():
+                        transcripts = json.loads(content)
+                    else:
+                        transcripts = []
+                    
+                    transcripts.append(transcript_dict)
+                
+                async with open(room_transcript_file, "w") as f:
+                    await f.write(json.dumps(transcripts, indent=2))
+            except json.JSONDecodeError:
+                # If file is corrupted, start fresh
+                logger.warning(f"Transcript file {room_transcript_file} was corrupted, starting fresh")
+                async with open(room_transcript_file, "w") as f:
+                    await f.write(json.dumps([transcript_dict], indent=2))
+        except Exception as e:
+            logger.exception(f"Error writing timed transcript to file: {e}")
 
     write_task = asyncio.create_task(write_transcription())
 
@@ -221,25 +263,31 @@ async def entrypoint(ctx: JobContext):
         await write_task
         
         # Write final version of all timed transcripts to room-specific file
-        if agent.timed_transcripts:
-            # Convert all TimedTranscript objects to serializable dictionaries
-            serializable_transcripts = [
-                {
-                    "type": tt.type,
-                    "role": tt.role,
-                    "content": tt.content,
-                    "start": tt.start,
-                    "end": tt.end,
-                    "words": [
-                        {"text": word.text, "start": word.start, "end": word.end}
-                        for word in tt.words
-                    ]
-                }
-                for tt in agent.timed_transcripts
-            ]
-            
-            async with open(room_transcript_file, "w") as f:
-                await f.write(json.dumps(serializable_transcripts, indent=2))
+        try:
+            if hasattr(agent, 'timed_transcripts') and agent.timed_transcripts:
+                # Convert all TimedTranscript objects to serializable dictionaries
+                serializable_transcripts = []
+                for tt in agent.timed_transcripts:
+                    try:
+                        transcript_dict = {
+                            "type": tt.type,
+                            "role": tt.role,
+                            "content": tt.content,
+                            "start": tt.start,
+                            "end": tt.end,
+                            "words": [
+                                {"text": word.text, "start": word.start, "end": word.end}
+                                for word in tt.words
+                            ]
+                        }
+                        serializable_transcripts.append(transcript_dict)
+                    except Exception as e:
+                        logger.exception(f"Error serializing transcript: {e}")
+                
+                async with open(room_transcript_file, "w") as f:
+                    await f.write(json.dumps(serializable_transcripts, indent=2))
+        except Exception as e:
+            logger.exception(f"Error writing final transcripts: {e}")
 
     ctx.add_shutdown_callback(finish_queue)
 
@@ -251,5 +299,6 @@ if __name__ == "__main__":
         WorkerOptions(
             entrypoint_fnc=entrypoint,
             prewarm_fnc=prewarm,
-        ),
+            agent_name="userology-ai"
+        )
     )
