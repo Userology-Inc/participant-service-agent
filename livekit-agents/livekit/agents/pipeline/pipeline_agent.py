@@ -17,10 +17,11 @@ from typing import (
 )
 
 from livekit import rtc
+from livekit.agents.types import TimedTranscript
 
 from .. import metrics, stt, tokenize, tts, utils, vad
 from ..llm import LLM, ChatContext, ChatMessage, FunctionContext, LLMStream
-from ..types import ATTRIBUTE_AGENT_STATE, AgentState
+from ..types import ATTRIBUTE_AGENT_STATE, AgentState, Word
 from .agent_output import AgentOutput, SpeechSource, SynthesisHandle
 from .agent_playout import AgentPlayout
 from .human_input import HumanInput
@@ -51,8 +52,8 @@ EventTypes = Literal[
     "user_stopped_speaking",
     "agent_started_speaking",
     "agent_stopped_speaking",
-    "user_speech_committed",
-    "agent_speech_committed",
+    "user_speech_committed",  # Emits (ChatMessage, TimedTranscript | None)
+    "agent_speech_committed",  # Emits (ChatMessage, TimedTranscript | None)
     "agent_speech_interrupted",
     "function_calls_collected",
     "function_calls_finished",
@@ -294,6 +295,7 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
 
         self._playing_speech: SpeechHandle | None = None
         self._transcribed_text, self._transcribed_interim_text = "", ""
+        self._transcribed_timed_transcript: TimedTranscript | None = None
 
         self._deferred_validation = _DeferredReplyValidation(
             self._validate_reply_if_possible,
@@ -605,6 +607,22 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
 
         def _on_final_transcript(ev: stt.SpeechEvent) -> None:
             new_transcript = ev.alternatives[0].text
+            # new_timed_transcript = ev.alternatives[0]
+            new_timed_transcript = TimedTranscript(
+                type="transcript",
+                role="user",
+                content=new_transcript,
+                start=ev.alternatives[0].start_time,
+                end=ev.alternatives[0].end_time,
+                # words=[Word(text=w.text, start=w.start, end=w.end) for w in ev.alternatives[0].words]
+                # words=[Word(text=w.text, start=w.start, end=w.end) for w in ev.alternatives[0].words]
+                # If words not present add empty list
+                words=[]
+            )
+            if(len(ev.alternatives[0].words)>0):
+                new_timed_transcript.words = [Word(text=w.text, start=w.start, end=w.end) for w in ev.alternatives[0].words]    
+            print(f"new_timed_transcript: {new_timed_transcript}")
+            
             if not new_transcript:
                 return
 
@@ -618,6 +636,15 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
             self._transcribed_text += (
                 " " if self._transcribed_text else ""
             ) + new_transcript
+
+            # Combine old and new timed transcripts
+            if self._transcribed_timed_transcript is not None:
+                self._transcribed_timed_transcript.words.extend(new_timed_transcript.words)
+                # Update the content and end time
+                self._transcribed_timed_transcript.content += (" " if self._transcribed_timed_transcript.content else "") + new_transcript
+                self._transcribed_timed_transcript.end = new_timed_transcript.end
+            else:
+                self._transcribed_timed_transcript = new_timed_transcript
 
             if self._opts.preemptive_synthesis:
                 if (
@@ -883,10 +910,13 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
 
             user_msg = ChatMessage.create(text=user_question, role="user")
             self._chat_ctx.messages.append(user_msg)
-            self.emit("user_speech_committed", user_msg)
+            self.emit("user_speech_committed", user_msg, self._transcribed_timed_transcript)
 
             self._transcribed_text = self._transcribed_text[len(user_question) :]
-            speech_handle.mark_user_committed()
+            speech_handle.mark_user_committed(timed_transcript=self._transcribed_timed_transcript)
+            
+            # Reset the timed transcript for the next speech
+            self._transcribed_timed_transcript = None
 
         # wait for the play_handle to finish and check every 1s if the user question should be committed
         _commit_user_question_if_needed()

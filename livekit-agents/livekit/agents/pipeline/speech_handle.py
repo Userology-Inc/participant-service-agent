@@ -5,6 +5,7 @@ from typing import AsyncIterable
 
 from .. import utils
 from ..llm import ChatMessage, LLMStream
+from ..types import TimedTranscript
 from .agent_output import SynthesisHandle
 
 
@@ -29,6 +30,7 @@ class SpeechHandle:
         self._is_reply = is_reply
         self._user_question = user_question
         self._user_committed = False
+        self._user_timed_transcript: TimedTranscript | None = None
 
         self._init_fut = asyncio.Future[None]()
         self._done_fut = asyncio.Future[None]()
@@ -114,8 +116,9 @@ class SpeechHandle:
         self._initialized = True
         self._init_fut.set_result(None)
 
-    def mark_user_committed(self) -> None:
+    def mark_user_committed(self, timed_transcript: TimedTranscript | None = None) -> None:
         self._user_committed = True
+        self._user_timed_transcript = timed_transcript
 
     def mark_speech_committed(self) -> None:
         self._speech_committed = True
@@ -127,6 +130,10 @@ class SpeechHandle:
     @property
     def speech_committed(self) -> bool:
         return self._speech_committed
+
+    @property
+    def user_timed_transcript(self) -> TimedTranscript | None:
+        return self._user_timed_transcript
 
     @property
     def id(self) -> str:

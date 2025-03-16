@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from __future__ import annotations
-
+import time
 import asyncio
 import dataclasses
 import json
@@ -25,6 +25,7 @@ from typing import Any, List, Optional, Tuple
 from urllib.parse import urlencode
 
 import aiohttp
+from livekit.agents.types import TimedTranscript, Word
 import numpy as np
 from livekit import rtc
 from livekit.agents import (
@@ -369,6 +370,7 @@ class SpeechStream(stt.SpeechStream):
         self._session = http_session
         self._base_url = base_url
         self._speaking = False
+        self._stream_start_time = 0.0  # Track when the stream starts
         self._audio_duration_collector = PeriodicCollector(
             callback=self._on_audio_duration_report,
             duration=5.0,
@@ -430,6 +432,7 @@ class SpeechStream(stt.SpeechStream):
 
     async def _run(self) -> None:
         closing_ws = False
+        self._stream_start_time = time.time()  # Set stream start time when we begin running
 
         async def keepalive_task(ws: aiohttp.ClientWebSocketResponse):
             # if we want to keep the connection alive even if no audio is sent,
@@ -629,7 +632,7 @@ class SpeechStream(stt.SpeechStream):
             is_endpoint = data["speech_final"]
             self._request_id = request_id
 
-            alts = live_transcription_to_speech_data(self._opts.language, data)
+            alts = live_transcription_to_speech_data(self._opts.language, data, self._stream_start_time)
             # If, for some reason, we didn't get a SpeechStarted event but we got
             # a transcript with text, we should start speaking. It's rare but has
             # been observed.
@@ -672,29 +675,26 @@ class SpeechStream(stt.SpeechStream):
 
 
 def live_transcription_to_speech_data(
-    language: str, data: dict
+    language: str, data: dict, stream_start_time: float = 0.0
 ) -> List[stt.SpeechData]:
     dg_alts = data["channel"]["alternatives"]
     print(f"dg_alts: {dg_alts}")
     return [
         stt.SpeechData(
             language=language,
-            start_time=alt["words"][0]["start"] if alt["words"] else 0,
-            end_time=alt["words"][-1]["end"] if alt["words"] else 0,
+            start_time=stream_start_time + (alt["words"][0]["start"] if alt["words"] else 0),
+            end_time=stream_start_time + (alt["words"][-1]["end"] if alt["words"] else 0),
             confidence=alt["confidence"],
             text=alt["transcript"],
-            # words=alt["words"],
             words=[
                 stt.SpeechWord(
                     text=w["word"],
-                    start=w["start"],
-                    end=w["end"],
+                    start=stream_start_time + w["start"],
+                    end=stream_start_time + w["end"],
                     confidence=w["confidence"],
-                    # !Deepgram provide puntuated word! Didn't use it
                 )
                 for w in alt["words"]
             ]
-
         )
         for alt in dg_alts
     ]

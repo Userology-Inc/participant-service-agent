@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from enum import Enum, unique
 from types import TracebackType
 from typing import AsyncIterable, AsyncIterator, Generic, List, Literal, TypeVar, Union
+import typing
 
 from livekit import rtc
 
@@ -77,8 +78,11 @@ class SpeechEvent:
 @dataclass
 class STTCapabilities:
     streaming: bool
+    """Whether the STT supports streaming recognition"""
     interim_results: bool
+    """Whether the STT supports interim results"""
     words: bool = False
+    """Whether the STT provides word-level timing information"""
 
 
 TEvent = TypeVar("TEvent")

@@ -4,6 +4,7 @@ import asyncio
 import json
 from datetime import datetime
 from aiofile import async_open as open
+import time
 # Add the parent directory to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -42,10 +43,10 @@ def prewarm(proc: JobProcess):
 
 async def entrypoint(ctx: JobContext):
     # Parse metadata from job
-    metadata = ctx.job.metadata
+    metadata = ctx.job.metadata or "{}"
     metadata = json.loads(metadata)
     phone_number = metadata.get("phoneNumber", "")
-    language_code = metadata.get("language", "hi-IN")
+    language_code = metadata.get("language", "en-IN")
     
     # Create a translator instance for translating system message and greeting
     translator = sarvam.Translator()
@@ -112,21 +113,22 @@ async def entrypoint(ctx: JobContext):
     agent = VoicePipelineAgent(
         vad=ctx.proc.userdata["vad"],
         # stt=custom_elevenlabs.STT(),
-        # stt=deepgram.STT(),
-        stt=sarvam.STT(
-            model=sarvam.STTModel.SAARIKA_V2,
-            language_code=language_code
-        ),
+        stt=deepgram.STT(),
+        # stt=sarvam.STT(
+        #     model=sarvam.STTModel.SAARIKA_V2,
+        #     language_code=language_code
+        # ),
         llm=portkey.LLM(
             config='pc-modera-fc0ed1',
             metadata={"_user": "Livekit"}
         ),
-        tts=sarvam.TTS(
-            model=sarvam.TTSModel.BULBUL_V1,
-            speaker=sarvam.TTSSpeaker.MEERA,
-            language_code=language_code
-        ),
+        # tts=sarvam.TTS(
+        #     model=sarvam.TTSModel.BULBUL_V1,
+        #     speaker=sarvam.TTSSpeaker.MEERA,
+        #     language_code=language_code
+        # ),
         # tts=elevenlabs.TTS(),
+        tts=deepgram.TTS(),
         # turn_detector=turn_detector.TurnDetector(),
         chat_ctx=initial_ctx,
     )
@@ -151,7 +153,7 @@ async def entrypoint(ctx: JobContext):
 
     # listen to incoming chat messages, only required if you'd like the agent to
     # answer incoming messages from Chat
-    chat = rtc.ChatManager(ctx.room)
+    # chat = rtc.ChatManager(ctx.room)
 
     async def answer_from_text(txt: str):
         chat_ctx = agent.chat_ctx.copy()
@@ -159,10 +161,10 @@ async def entrypoint(ctx: JobContext):
         stream = agent.llm.chat(chat_ctx=chat_ctx)
         await agent.say(stream)
 
-    @chat.on("message_received")
-    def on_chat_received(msg: rtc.ChatMessage):
-        if msg.message:
-            asyncio.create_task(answer_from_text(msg.message))
+    # @chat.on("message_received")
+    # def on_chat_received(msg: rtc.ChatMessage):
+    #     if msg.message:
+    #         asyncio.create_task(answer_from_text(msg.message))
 
     log_queue = asyncio.Queue()
 
@@ -204,12 +206,26 @@ async def entrypoint(ctx: JobContext):
         try:
             if timed_transcript:
                 # If we received a timed transcript, use it directly
+                # Ensure role is explicitly set to user
+                timed_transcript.role = "user"
+                
+                # Add to agent's in-memory collection
                 agent.timed_transcripts.append(timed_transcript)
+                
                 # Write to the room-specific transcript file
                 asyncio.create_task(write_to_timed_transcript_file(timed_transcript))
             else:
-                # If no timed transcript is available, create a basic one
-                asyncio.create_task(add_to_timed_transcript("user", msg.content))
+                # If no timed transcript is available, create a basic one with current time
+                basic_transcript = TimedTranscript(
+                    type="transcript",
+                    role="user",
+                    content=msg.content,
+                    start=None,
+                    end=None,
+                    words=[]
+                )
+                agent.timed_transcripts.append(basic_transcript)
+                asyncio.create_task(write_to_timed_transcript_file(basic_transcript))
         except Exception as e:
             logger.exception(f"Error handling user timed transcript: {e}")
 
@@ -331,6 +347,6 @@ if __name__ == "__main__":
         WorkerOptions(
             entrypoint_fnc=entrypoint,
             prewarm_fnc=prewarm,
-            agent_name="userology-ai"
+            # agent_name="userology-ai"
         )
     )
