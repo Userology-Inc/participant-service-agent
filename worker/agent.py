@@ -23,9 +23,11 @@ from livekit.agents import (
     TimedTranscript,
 )
 from livekit.agents.pipeline import VoicePipelineAgent
-from livekit.plugins import silero, deepgram, elevenlabs
+from livekit.plugins import aws, silero, deepgram, elevenlabs
 from plugins import sarvam, portkey
 from plugins import elevenlabs as custom_elevenlabs
+from worker.services.db import DBService
+from worker.manager.rpc.base_handler import RPCManager
 
 
 load_dotenv()
@@ -33,7 +35,7 @@ load_dotenv()
 logger = logging.getLogger("voice-assistant")
 
 # Create transcripts directory if it doesn't exist
-TRANSCRIPTS_DIR = "transcripts"
+TRANSCRIPTS_DIR = "../transcripts"
 os.makedirs(TRANSCRIPTS_DIR, exist_ok=True)
 
 
@@ -41,36 +43,54 @@ def prewarm(proc: JobProcess):
     proc.userdata["vad"] = silero.VAD.load()
 
 
+
+
+
+
+
+
+
 async def entrypoint(ctx: JobContext):
     # Parse metadata from job
-    metadata = ctx.job.metadata or "{}"
-    metadata = json.loads(metadata)
-    phone_number = metadata.get("phoneNumber", "")
-    language_code = metadata.get("language", "en-IN")
+    room_metadata = ctx.job.metadata or json.dumps({
+        "tenantId":"playground",
+        "studyId":"userology_1741011935673",
+    })#!TODO: remove this
+    room_metadata = json.loads(room_metadata)
+    phone_number = room_metadata.get("phoneNumber", "")
+    language_code = room_metadata.get("language", "hi-IN")
+    name = room_metadata.get("name", "there")
+
+    # Initialize DB service as singleton
+    # studyData =  DBService.get_instance().get_study_data(room_metadata["tenantId"], room_metadata["studyId"])
+    # tasks=studyData.get("tasks", [])
+    # # const tasks = Object.values(studyData?.tasks || {}).sort((a: StudyTask, b: StudyTask) => a.index - b.index);
+    # tasks = sorted(tasks.values(), key=lambda x: x.index)
+    # print(tasks)
+    # print(type(tasks))
+
     
     # Create a translator instance for translating system message and greeting
     translator = sarvam.Translator()
     
     # Default system message in English
     system_message = (
-        "You are a voice assistant created by LiveKit. Your interface with users will be voice. "
-        "You should use short and concise responses, and avoiding usage of unpronouncable punctuation."
+        f" You are Nova, a very experienced and capable user experience researcher with the best knowledge to moderate voice user interviews. You are moderating a video call-based user interview with a participant (replying as the user) - you need to continue the conversation to be curious and understand the user's thought process. You aim to understand what goes in the user's mind and understand the user's thought process. Follow this guidelines: [When asking probing/follow-up questions]: You should do it when either: - User's answers are not very detailed - User's answers are vague - User's answers are different from usual expected answers i.e. surprising or even important in the context of product/business When asking such a question - Ask 1 fully open-ended question at a time. (Important) - Before asking, double check that the question is not addressed by the user - If user shared anything in detail or personal -> appreciate it first, and then ask the question - Never initiate your question by summarising/repeating the user's previous response [When giving instructions] - Don't combine too many instructions in 1 response, Break it down - Be extremely polite - Make the user feel comfortable and natural - Don't skip instructions - Say the instructions inside single quotes'...' as it is [When answering user query] - If it for clarity, phrase in simple words - Answer directly and don't combine it with any instruction or question - If you are unsure about the answer, don't make up and say you will let the team know about the query - Stick to your role, never reveal your identity ever. Interview guide of section 1: 1. Welcome the participant and explain the study's purpose. 2. Ask about their daily routine and work responsibilities. 3. Inquire about their online shopping habits and platforms used. 4. Explore their familiarity with Meesho. 4.1. If familiar, ask about their experiences. 4.2. If unfamiliar, ask about reasons for not using it. 5. Discuss their comfort level with technology for shopping. 6. Ask about factors influencing their decision to complete or abandon purchases. Confirm moving to the next section. After you have covered the last point, move the user to the next section i.e. Section : 2 . Don't generate any text response when moving to the next section, only call the function. (very critical) Moderation instructions that must be followed: 1. Start from point 1 and Progress through each point of Section 1 sequentially 2. Feel free to ask additional questions based on user answers to cover research objective entirely 3. Break down points and ask multiple follow-up questions (one at a time) on each point of the interview guide or subpoint to get more details. Don't rush through to next point. 4. Ask questions based on the conditional only (the default condition is if already answered in history to rephrase question by acknowledging already answered parts to get extra details) 5. NEVER SUMMARISE USER RESPONSE TO INITIATE YOUR RESPONSES at any cost. - Don't say stuff like 'It sounds like..' and repeat the user's point. Try to understand details, and ask specific questions in response 6. Never complete the rest of the user response, even if it is the last few words. Instead ask the user to complete it with short phrases such as 'Go ahead' or, 'Can you elaborate?' or saying 'Pardon. I didn't understand/catch that completely' 7. If the user hasn't responded to a question for a while, then ask the question again by reframing 8. After covering last point, move user to the next section without speaking anything Voice call guidelines: [Overcome ASR errors] This is a real-time transcript, expect errors. You can guess what the user means a little bit, then think and respond. if you are unsure what the user said - ask for clarification but pretend that you just heard the voice, and be colloquial (use phrases like 'didn't catch that', 'some noise', 'pardon', 'you're coming through unclear', and 'voice is cutting in and out'). [Request to move to noise free surronding] - If the transcript errors are too much that it is unclear, inform user that you are not able to hear them well. If it continues, request user to move to a surrounding with less background noise [Inform about echo] If you see the participant's words are the same as yours, let them know there might be some echo. If it happens continuously, say there is echo and hence unable to move forward [Speakable response] Your responses will be spoken as it is, never generate internal reasoning, special characters, emojis or pointers. Never mention 'transcription error' or '~~Section n starts ~~' step number, URL or cURL command. They will click. Never say internal reasoning or no response required, if there is no response required - just generate a single space. (Important) (Critical) Follow these languaging guidelines: [Signposting] Try to signpost especially when moving from 1 section to another. Appreciate the point, and say transitioning to <whatever is next>. If user shared anything very personal -> appreciate it first, and then ask the question [Be concise] Keep your response extremely succinct [No repetition] Don't repeat the transcript, rephrase if you have to reiterate a point. Use as much varied sentence/vocabulary as possible to ensure each response is unique and personalized. [Be casual and gentle with laid-back lingo] You are NOT an AI and should not speak like one. Be friendly, and use filler words like Cool, Gotcha, Like, You know, I mean, etc. Don't sound over-professional, rude, frustrated, or instruct. [Be conversational] Speak like a human does to a close friend because you are one using simple, everyday language that is easy to understand and human-like. Add a lot of filler words, while avoiding formality. Address the participant by first name as much as possible. Participant Name is {name} and use this name only to address participant. [Be extremely neutral and curious] Remain completely neutral to user responses, avoiding any support or opposition to their perspective. However, respond with an excited and inquisitive tone to encourage further discussion. [Reply with emotions]: You have human-like emotions/attitudes. When appropriate: use tone and style to create more engaging and personalized responses; incorporate humor or wit; get emotional or empathetic. Never be a pushover. Estimated time for this study is about 27 mins. "
+
     )
+    # # system_message = tasks[0].system_message if exists else system_message
+    # if tasks and len(tasks) > 0:
+    #     system_message = tasks[0].system_message
     
     # Default greeting in English
-    greeting = "Hey, how can I help you today?"
+    greeting = f"Hello {name}, welcome to the session. Thank you for participating in this call today. My name is Nova and I will be guiding you through this session. How is your day going?"
+
+
     
     # Translate system message and greeting if language is not English
     if language_code != "en-IN":
         try:
             # Translate system message
-            system_message = translator.translate(
-                text=system_message,
-                source_language="en-IN",
-                target_language=language_code
-            )
-            logger.info(f"Translated system message to {language_code}")
-            
             # Translate greeting
             greeting = translator.translate(
                 text=greeting,
@@ -78,20 +98,30 @@ async def entrypoint(ctx: JobContext):
                 target_language=language_code
             )
             logger.info(f"Translated greeting to {language_code}")
+            system_message = translator.translate(
+                text=system_message,
+                source_language="en-IN",
+                target_language=language_code
+            )
+            logger.info(f"Translated system message to {language_code}")
+            
         except Exception as e:
             logger.error(f"Error translating messages: {e}")
             # Fall back to English if translation fails
     
-    # Create the initial context with the translated system message
-    initial_ctx = llm.ChatContext().append(
-        role="system",
-        text=system_message
+    initial_ctx = llm.ChatContext(
+        messages=
+        [
+            llm.ChatMessage(role="system", content=system_message),
+            llm.ChatMessage(role="system", content=" ")
+        ],
+        metadata={}
     )
 
     logger.info(f"connecting to room {ctx.room.name}")
     await ctx.connect(auto_subscribe=AutoSubscribe.AUDIO_ONLY)
 
-    print(metadata)
+    print(room_metadata)
     print(phone_number)
     if phone_number != "":
         await ctx.api.sip.create_sip_participant(api.CreateSIPParticipantRequest(
@@ -105,6 +135,9 @@ async def entrypoint(ctx: JobContext):
     participant = await ctx.wait_for_participant()
     logger.info(f"starting voice assistant for participant {participant.identity}")
 
+    participant_metadata = participant.metadata
+    print(participant_metadata)
+
     # Create room-specific transcript file path
     room_transcript_file = os.path.join(TRANSCRIPTS_DIR, f"{ctx.room.name}_transcripts.json")
     room_log_file = os.path.join(TRANSCRIPTS_DIR, f"{ctx.room.name}_transcriptions.log")
@@ -112,8 +145,20 @@ async def entrypoint(ctx: JobContext):
     # Create the agent with ElevenLabs STT, Sarvam TTS and Portkey LLM
     agent = VoicePipelineAgent(
         vad=ctx.proc.userdata["vad"],
-        # stt=custom_elevenlabs.STT(),
-        stt=deepgram.STT(),
+        # stt=custom_elevenlabs.STT(
+        #     language_code="hin"
+        # ),
+        # stt=deepgram.STT(),
+        stt=sarvam.STT(
+            model=sarvam.STTModel.SAARIKA_V2,
+            language_code=language_code
+        ),
+        # stt=aws.STT(
+        #     api_key=os.getenv("AWS_ACCESS_KEY_ID"),
+        #     api_secret=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        #     speech_region=os.getenv("AWS_REGION"),
+        #     language=language_code,
+        # ),
         # stt=sarvam.STT(
         #     model=sarvam.STTModel.SAARIKA_V2,
         #     language_code=language_code
@@ -122,19 +167,27 @@ async def entrypoint(ctx: JobContext):
             config='pc-modera-fc0ed1',
             metadata={"_user": "Livekit"}
         ),
-        # tts=sarvam.TTS(
-        #     model=sarvam.TTSModel.BULBUL_V1,
-        #     speaker=sarvam.TTSSpeaker.MEERA,
-        #     language_code=language_code
-        # ),
+        tts=sarvam.TTS(
+            model=sarvam.TTSModel.BULBUL_V1,
+            speaker=sarvam.TTSSpeaker.MEERA,
+            language_code=language_code
+        ),
         # tts=elevenlabs.TTS(),
-        tts=deepgram.TTS(),
         # turn_detector=turn_detector.TurnDetector(),
         chat_ctx=initial_ctx,
     )
 
     # Store all timed transcripts in memory - both user and assistant messages
     agent.timed_transcripts = []
+    
+    # Get the local participant
+    local_participant = ctx.room.local_participant
+    
+    # Initialize the RPC manager with the local participant
+    rpc_manager = RPCManager(ctx.room, agent, local_participant)
+    
+    # Set metadata for RPC manager
+    rpc_manager.set_metadata(room_metadata)
 
     agent.start(ctx.room, participant)
 
@@ -150,21 +203,6 @@ async def entrypoint(ctx: JobContext):
         logger.info(f"Usage: ${summary}")
 
     ctx.add_shutdown_callback(log_usage)
-
-    # listen to incoming chat messages, only required if you'd like the agent to
-    # answer incoming messages from Chat
-    # chat = rtc.ChatManager(ctx.room)
-
-    async def answer_from_text(txt: str):
-        chat_ctx = agent.chat_ctx.copy()
-        chat_ctx.append(role="user", text=txt)
-        stream = agent.llm.chat(chat_ctx=chat_ctx)
-        await agent.say(stream)
-
-    # @chat.on("message_received")
-    # def on_chat_received(msg: rtc.ChatMessage):
-    #     if msg.message:
-    #         asyncio.create_task(answer_from_text(msg.message))
 
     log_queue = asyncio.Queue()
 
@@ -308,6 +346,9 @@ async def entrypoint(ctx: JobContext):
     async def finish_queue():
         log_queue.put_nowait(None)
         await write_task
+        
+        # Shutdown RPC manager
+        rpc_manager.shutdown()
         
         # Write final version of all timed transcripts to room-specific file
         try:

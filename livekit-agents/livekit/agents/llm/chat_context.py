@@ -182,6 +182,10 @@ class ChatContext:
     messages: list[ChatMessage] = field(default_factory=list)
     _metadata: dict[str, Any] = field(default_factory=dict, repr=False, init=False)
 
+    def __init__(self, messages: list[ChatMessage] = [], metadata: dict[str, Any] = {}):
+        self.messages = messages
+        self._metadata = metadata
+
     def append(
         self, *, text: str = "", images: list[ChatImage] = [], role: ChatRole = "system"
     ) -> ChatContext:
@@ -192,3 +196,23 @@ class ChatContext:
         copied_chat_ctx = ChatContext(messages=[m.copy() for m in self.messages])
         copied_chat_ctx._metadata = self._metadata
         return copied_chat_ctx
+    
+    def get_messages(self) -> list[ChatMessage]:
+        return self.messages
+    
+    def get_metadata(self) -> dict[str, Any]:
+        return self._metadata
+    
+    def update_messages(self, messages: list[ChatMessage]):
+        self.messages = messages
+    def update_metadata(self, metadata: dict[str, Any]):
+        self._metadata = metadata
+        
+        
+    def update_message(self, index: int, message: ChatMessage):
+        # Check if index is within valid range
+        if index < 0 or index >= len(self.messages):
+            raise ValueError(f"Index {index} is out of range for the current message list")
+        
+        # Update the message at the specified index
+        self.messages[index] = message

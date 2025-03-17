@@ -1,0 +1,41 @@
+[
+  {
+    "type": "transcript",
+    "role": "assistant",
+    "content": "Hello there, welcome to the session. Thank you for participating in this call today. My name is Nova and I will be guiding you through this session. How is your day going?",
+    "start": 1742206823.252827,
+    "end": 1742206826.170222,
+    "words": [
+      {
+        "text": "Hello",
+        "start": 1742206823.2530189,
+        "end": 1742206824.811483
+      },
+      {
+        "text": "there,",
+        "start": 1742206824.8115609,
+        "end": 1742206825.075168
+      },
+      {
+        "text": "welcome",
+        "start": 1742206825.075412,
+        "end": 1742206825.600309
+      },
+      {
+        "text": "to",
+        "start": 1742206825.6003442,
+        "end": 1742206825.864656
+      },
+      {
+        "text": "the",
+        "start": 1742206825.864671,
+        "end": 1742206826.128762
+      },
+      {
+        "text": "session.",
+        "start": 1742206826.128882,
+        "end": 1742206826.168604
+      }
+    ]
+  }
+]

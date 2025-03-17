@@ -1,0 +1,54 @@
+[
+  {
+    "type": "transcript",
+    "role": "assistant",
+    "content": "Hey, how can I help you today?",
+    "start": 1742134815.610958,
+    "end": 1742134817.4702349,
+    "words": [
+      {
+        "text": "Hey,",
+        "start": 1742134815.6110458,
+        "end": 1742134815.89573
+      },
+      {
+        "text": "how",
+        "start": 1742134815.895871,
+        "end": 1742134816.159897
+      },
+      {
+        "text": "can",
+        "start": 1742134816.159922,
+        "end": 1742134816.4234
+      },
+      {
+        "text": "I",
+        "start": 1742134816.423418,
+        "end": 1742134816.686284
+      },
+      {
+        "text": "help",
+        "start": 1742134816.686307,
+        "end": 1742134816.9497972
+      },
+      {
+        "text": "you",
+        "start": 1742134816.9498088,
+        "end": 1742134817.211802
+      },
+      {
+        "text": "today?",
+        "start": 1742134817.2154481,
+        "end": 1742134817.4702249
+      }
+    ]
+  },
+  {
+    "type": "transcript",
+    "role": "user",
+    "content": "[[Clicked on 'somewhere' on 'Mega Blockbuster Sale Announcement' screen and moved to 'Multilingual Language Selection Screen' screen]]",
+    "start": 1742112538.822,
+    "end": 1742112539.822,
+    "words": []
+  }
+]
