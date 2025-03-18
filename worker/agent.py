@@ -163,13 +163,13 @@ async def entrypoint(ctx: JobContext):
         #     model=sarvam.STTModel.SAARIKA_V2,
         #     language_code=language_code
         # ),
-        # llm=portkey.LLM(
-        #     config='pc-moderation-fc0ed1',
-        #     metadata={"_user": "Livekit"}
-        # ),
-        llm=openai.LLM( 
-            model="gpt-4o",
+        llm=portkey.LLM(
+            config='pc-moderation-fc0ed1',
+            metadata={"_user": "Livekit"}
         ),
+        # llm=openai.LLM( 
+        #     model="gpt-4o",
+        # ),
         tts=sarvam.TTS(
             model=sarvam.TTSModel.BULBUL_V1,
             speaker=sarvam.TTSSpeaker.MEERA,
