@@ -16,8 +16,9 @@
 from __future__ import annotations
 
 import os
+import json
 from dataclasses import dataclass
-from typing import Any, Dict, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union, MutableSet
 
 import httpx
 from livekit.agents import (
@@ -29,13 +30,9 @@ from livekit.agents import (
 from livekit.agents.llm import (
     LLMCapabilities,
     ToolChoice,
+    _create_ai_function_info,
 )
 from livekit.agents.types import DEFAULT_API_CONNECT_OPTIONS, APIConnectOptions
-
-from livekit.plugins.openai.llm import LLM as OpenAILLM
-from livekit.plugins.openai.llm import LLMStream as OpenAILLMStream
-from livekit.plugins.openai.llm import _get_api_key, _strip_nones, _build_oai_context
-from livekit.plugins.openai._oai_api import build_oai_function_description
 
 from .models import PortkeyChatModels, ProviderOptions
 
@@ -53,7 +50,7 @@ class LLMOptions:
     tool_choice: Union[ToolChoice, Literal["auto", "required", "none"]] = "auto"
     store: Optional[bool] = None
     metadata: Optional[Dict[str, str]] = None
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[int] = 1024
     provider: Optional[ProviderOptions] = None
     api_base: Optional[str] = None
     headers: Optional[Dict[str, str]] = None
@@ -63,6 +60,82 @@ class LLMOptions:
     retry_settings: Optional[Dict[str, Any]] = None
     fallbacks: Optional[list] = None
     config: Optional[Union[str, Dict[str, Any]]] = None
+
+
+def _get_api_key(env_var: str, key: str | None) -> str:
+    """Get API key from environment variable or provided key."""
+    key = key or os.environ.get(env_var)
+    if not key:
+        raise ValueError(
+            f"{env_var} is required, either as argument or set {env_var} environmental variable"
+        )
+    return key
+
+
+def _strip_nones(data: dict[str, Any]) -> dict[str, Any]:
+    """Remove None values from dictionary."""
+    return {k: v for k, v in data.items() if v is not None}
+
+
+def build_oai_function_description(func: llm.AIFunction, capabilities: llm.LLMCapabilities) -> Dict[str, Any]:
+    """Build OpenAI compatible function description."""
+    params = {
+        "type": "object",
+        "properties": {},
+        "required": [],
+    }
+
+    for param in func.parameters:
+        params["properties"][param.name] = {"type": param.type}
+        if param.description:
+            params["properties"][param.name]["description"] = param.description
+        if param.required:
+            params["required"].append(param.name)
+        if param.enum:
+            params["properties"][param.name]["enum"] = param.enum
+
+    return {
+        "type": "function",
+        "function": {
+            "name": func.name,
+            "description": func.description,
+            "parameters": params,
+        },
+    }
+
+
+def _build_oai_context(chat_ctx: llm.ChatContext, cache_key: Any) -> List[Dict[str, Any]]:
+    """Build OpenAI compatible message list from ChatContext."""
+    messages = []
+    for msg in chat_ctx.messages:
+        if msg.role == "system":
+            messages.append({"role": "system", "content": msg.content})
+        elif msg.role == "user":
+            messages.append({"role": "user", "content": msg.content})
+        elif msg.role == "assistant":
+            if msg.tool_calls and len(msg.tool_calls) > 0:
+                assistant_msg = {"role": "assistant", "content": msg.content}
+                tool_calls = []
+                for tool_call in msg.tool_calls:
+                    tool_calls.append({
+                        "id": tool_call.id,
+                        "type": "function",
+                        "function": {
+                            "name": tool_call.name,
+                            "arguments": tool_call.arguments,
+                        }
+                    })
+                assistant_msg["tool_calls"] = tool_calls
+                messages.append(assistant_msg)
+            else:
+                messages.append({"role": "assistant", "content": msg.content})
+        elif msg.role == "tool":
+            messages.append({
+                "role": "tool",
+                "tool_call_id": msg.tool_call_id,
+                "content": msg.content,
+            })
+    return messages
 
 
 class LLM(llm.LLM):
@@ -77,7 +150,7 @@ class LLM(llm.LLM):
         tool_choice: Union[ToolChoice, Literal["auto", "required", "none"]] = "auto",
         store: Optional[bool] = None,
         metadata: Optional[Dict[str, str]] = None,
-        max_tokens: Optional[int] = None,
+        max_tokens: Optional[int] = 1024,
         provider: Optional[ProviderOptions] = None,
         api_base: Optional[str] = None,
         headers: Optional[Dict[str, str]] = None,
@@ -184,12 +257,12 @@ class LLM(llm.LLM):
         )
 
 
-class LLMStream(OpenAILLMStream):
+class LLMStream(llm.LLMStream):
     def __init__(
         self,
         llm: LLM,
         *,
-        client: portkey.Portkey,
+        client: Portkey,
         model: str | PortkeyChatModels,
         user: Optional[str],
         chat_ctx: llm.ChatContext,
@@ -202,24 +275,101 @@ class LLMStream(OpenAILLMStream):
         provider: Optional[ProviderOptions] = None,
     ) -> None:
         super().__init__(
-            llm,
-            client=client,  # type: ignore
-            model=model,
-            user=user,
-            chat_ctx=chat_ctx,
-            fnc_ctx=fnc_ctx,
-            conn_options=conn_options,
-            n=n,
-            temperature=temperature,
-            parallel_tool_calls=parallel_tool_calls,
-            tool_choice=tool_choice,
+            llm, chat_ctx=chat_ctx, fnc_ctx=fnc_ctx, conn_options=conn_options
         )
+        self._client = client
+        self._model = model
+        self._llm: LLM = llm
+
+        self._user = user
+        self._temperature = temperature
+        self._n = n
+        self._parallel_tool_calls = parallel_tool_calls
+        self._tool_choice = tool_choice
         self._provider = provider
+        
+        # Function call tracking
+        self._tool_call_id = None
+        self._fnc_name = None
+        self._fnc_raw_arguments = None
+        self._tool_index = None
+        self._function_calls_info = []
+
+    def _parse_choice(self, id: str, choice: Any) -> llm.ChatChunk | None:
+        delta = choice.delta
+
+        # Handle null delta
+        if delta is None:
+            return None
+
+        if delta.tool_calls:
+            # check if we have functions to calls
+            for tool in delta.tool_calls:
+                if not tool.function:
+                    continue  # may add other tools in the future
+
+                call_chunk = None
+                if self._tool_call_id and tool.id and tool.index != self._tool_index:
+                    call_chunk = self._try_build_function(id, choice)
+
+                if tool.function.name:
+                    self._tool_index = tool.index
+                    self._tool_call_id = tool.id
+                    self._fnc_name = tool.function.name
+                    self._fnc_raw_arguments = tool.function.arguments or ""
+                elif tool.function.arguments:
+                    self._fnc_raw_arguments += tool.function.arguments  # type: ignore
+
+                if call_chunk is not None:
+                    return call_chunk
+
+        if choice.finish_reason in ("tool_calls", "stop") and self._tool_call_id:
+            # we're done with the tool calls, run the last one
+            return self._try_build_function(id, choice)
+
+        return llm.ChatChunk(
+            request_id=id,
+            choices=[
+                llm.Choice(
+                    delta=llm.ChoiceDelta(content=delta.content, role="assistant"),
+                    index=choice.index,
+                )
+            ],
+        )
+
+    def _try_build_function(self, id: str, choice: Any) -> llm.ChatChunk | None:
+        if not self._fnc_ctx:
+            return None
+
+        if self._tool_call_id is None:
+            return None
+
+        if self._fnc_name is None or self._fnc_raw_arguments is None:
+            return None
+
+        fnc_info = _create_ai_function_info(
+            self._fnc_ctx, self._tool_call_id, self._fnc_name, self._fnc_raw_arguments
+        )
+
+        self._tool_call_id = self._fnc_name = self._fnc_raw_arguments = None
+        self._function_calls_info.append(fnc_info)
+
+        return llm.ChatChunk(
+            request_id=id,
+            choices=[
+                llm.Choice(
+                    delta=llm.ChoiceDelta(
+                        role="assistant",
+                        tool_calls=[fnc_info],
+                        content=choice.delta.content,
+                    ),
+                    index=choice.index,
+                )
+            ],
+        )
 
     async def _run(self) -> None:
-        # current function call that we're waiting for full completion (args are streamed)
-        # (defined inside the _run method to make sure the state is reset for each run/attempt)
-        self._oai_stream = None
+        # Reset tracking variables to ensure fresh state for each run/attempt
         self._tool_call_id = None
         self._fnc_name = None
         self._fnc_raw_arguments = None
@@ -246,7 +396,6 @@ class LLMStream(OpenAILLMStream):
                 if tools is not None
                 else None,
                 "temperature": self._temperature,
-                "metadata": self._llm._opts.metadata,
                 "max_tokens": self._llm._opts.max_tokens,
                 "n": self._n,
                 "stream": True,
@@ -268,7 +417,9 @@ class LLMStream(OpenAILLMStream):
                 with_options_params["metadata"] = self._llm._opts.metadata
             if self._llm._opts.config is not None:
                 with_options_params["config"] = self._llm._opts.config
-                
+
+            print(f"with_options_params: {with_options_params}")
+            print(f"opts: {opts}")
             client = self._client.with_options(**with_options_params)
             stream = client.chat.completions.create(
                 messages=messages,
@@ -293,11 +444,6 @@ class LLMStream(OpenAILLMStream):
                                 ),
                             )
                         )
-                        
-
-
-                        
-
 
         except Exception as e:
             if isinstance(e, PortkeyAPITimeoutError):

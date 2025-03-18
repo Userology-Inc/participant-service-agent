@@ -113,7 +113,6 @@ async def entrypoint(ctx: JobContext):
         messages=
         [
             llm.ChatMessage(role="system", content=system_message),
-            llm.ChatMessage(role="system", content=" ")
         ],
         metadata={}
     )
@@ -145,14 +144,14 @@ async def entrypoint(ctx: JobContext):
     # Create the agent with ElevenLabs STT, Sarvam TTS and Portkey LLM
     agent = VoicePipelineAgent(
         vad=ctx.proc.userdata["vad"],
-        # stt=custom_elevenlabs.STT(
-        #     language_code="hin"
-        # ),
-        # stt=deepgram.STT(),
-        stt=sarvam.STT(
-            model=sarvam.STTModel.SAARIKA_V2,
-            language_code=language_code
+        stt=custom_elevenlabs.STT(
+            language_code="hin"
         ),
+        # stt=deepgram.STT(),
+        # stt=sarvam.STT(
+        #     model=sarvam.STTModel.SAARIKA_V2,
+        #     language_code=language_code
+        # ),
         # stt=aws.STT(
         #     api_key=os.getenv("AWS_ACCESS_KEY_ID"),
         #     api_secret=os.getenv("AWS_SECRET_ACCESS_KEY"),
@@ -163,13 +162,13 @@ async def entrypoint(ctx: JobContext):
         #     model=sarvam.STTModel.SAARIKA_V2,
         #     language_code=language_code
         # ),
-        # llm=portkey.LLM(
-        #     config='pc-moderation-fc0ed1',
-        #     metadata={"_user": "Livekit"}
-        # ),
-        llm=openai.LLM( 
-            model="gpt-4o",
+        llm=portkey.LLM(
+            config='pc-phone-fb49c9',
+            metadata={"_user": "Livekit"}
         ),
+        # llm=openai.LLM( 
+        #     model="gpt-4o",
+        # ),
         tts=sarvam.TTS(
             model=sarvam.TTSModel.BULBUL_V1,
             speaker=sarvam.TTSSpeaker.MEERA,
