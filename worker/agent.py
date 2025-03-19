@@ -43,11 +43,24 @@ def prewarm(proc: JobProcess):
     proc.userdata["vad"] = silero.VAD.load()
 
 
-
-
-
-
-
+def map_sarvam_to_elevenlabs_language(sarvam_code):
+    """Map Sarvam language codes to ElevenLabs language codes"""
+    # Mapping from Sarvam language codes to ElevenLabs language codes
+    language_map = {
+        "hi-IN": "hin",  # Hindi
+        "bn-IN": "ben",  # Bengali
+        "kn-IN": "kan",  # Kannada
+        "ml-IN": "mal",  # Malayalam
+        "mr-IN": "mar",  # Marathi
+        "od-IN": "ori",  # Odia
+        "pa-IN": "pan",  # Punjabi
+        "ta-IN": "tam",  # Tamil
+        "te-IN": "tel",  # Telugu
+        "en-IN": "eng",  # English
+        "gu-IN": "guj",  # Gujarati
+    }
+    
+    return language_map.get(sarvam_code, "hin")  # Default to Hindi if not found
 
 
 async def entrypoint(ctx: JobContext):
@@ -60,6 +73,9 @@ async def entrypoint(ctx: JobContext):
     phone_number = room_metadata.get("phoneNumber", "")
     language_code = room_metadata.get("language", "hi-IN")
     name = room_metadata.get("name", "there")
+    
+    # Map Sarvam language code to ElevenLabs format
+    elevenlabs_language_code = map_sarvam_to_elevenlabs_language(language_code)
 
     # Initialize DB service as singleton
     # studyData =  DBService.get_instance().get_study_data(room_metadata["tenantId"], room_metadata["studyId"])
@@ -90,7 +106,6 @@ async def entrypoint(ctx: JobContext):
     # Translate system message and greeting if language is not English
     if language_code != "en-IN":
         try:
-            # Translate system message
             # Translate greeting
             greeting = translator.translate(
                 text=greeting,
@@ -145,7 +160,7 @@ async def entrypoint(ctx: JobContext):
     agent = VoicePipelineAgent(
         vad=ctx.proc.userdata["vad"],
         stt=custom_elevenlabs.STT(
-            language_code="hin"
+            language_code=elevenlabs_language_code
         ),
         # stt=deepgram.STT(),
         # stt=sarvam.STT(
