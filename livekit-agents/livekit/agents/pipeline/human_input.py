@@ -133,24 +133,24 @@ class HumanInput(utils.EventEmitter[EventTypes]):
                 if ev.type == voice_activity_detection.VADEventType.START_OF_SPEECH:
                     self._speaking = True
                     self.emit("start_of_speech", ev)
-                    logger.info(f"start_of_speech: {ev}")
+                    # logger.info(f"start_of_speech: {ev}")
                 elif ev.type == voice_activity_detection.VADEventType.INFERENCE_DONE:
                     self._speech_probability = ev.probability
-                    self.emit("vad_inference_done", ev)
+                    # self.emit("vad_inference_done", ev)
                 elif ev.type == voice_activity_detection.VADEventType.END_OF_SPEECH:
                     self._speaking = False
                     self.emit("end_of_speech", ev)
-                    logger.info(f"end_of_speech: {ev}")
+                    # logger.info(f"end_of_speech: {ev}")
         async def _stt_stream_co() -> None:
             async for ev in stt_stream:
                 stt_forwarder.update(ev)
 
                 if ev.type == speech_to_text.SpeechEventType.FINAL_TRANSCRIPT:
                     self.emit("final_transcript", ev)
-                    logger.info(f"final_transcript: {ev}")
+                    # logger.info(f"final_transcript: {ev}")
                 elif ev.type == speech_to_text.SpeechEventType.INTERIM_TRANSCRIPT:
                     self.emit("interim_transcript", ev)
-                    logger.info(f"interim_transcript: {ev}")
+                    # logger.info(f"interim_transcript: {ev}")
                 else:
                     logger.info(f"stt_event, not specified: {ev}")
 

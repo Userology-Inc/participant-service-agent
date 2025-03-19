@@ -101,7 +101,7 @@ class TTS(tts.TTS):
         self,
         *,
         voice: Voice = DEFAULT_VOICE,
-        model: TTSModels | str = "eleven_flash_v2_5",
+        model: TTSModels | str = "eleven_multilingual_v2",
         api_key: str | None = None,
         base_url: str | None = None,
         streaming_latency: int = 0,

@@ -660,8 +660,8 @@ class VoicePipelineAgent(utils.EventEmitter[EventTypes]):
             words = self._opts.transcription.word_tokenizer.tokenize(
                 text=new_transcript
             )
-            if(len(words)>0 ):
-                logger.info(f"words: printed in _on_final_transcript: {words}")
+            # if(len(words)>0 ):
+                # logger.info(f"words: printed in _on_final_transcript: {words}")
             if len(words) >= 3:
                 # VAD can sometimes not detect that the human is speaking
                 # to make the interruption more reliable, we also interrupt on the final transcript.
