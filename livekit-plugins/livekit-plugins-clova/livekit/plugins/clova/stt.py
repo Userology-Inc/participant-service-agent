@@ -23,7 +23,13 @@ import wave
 
 import aiohttp
 
-from livekit.agents import APIConnectOptions, APIStatusError, APITimeoutError, stt, utils
+from livekit.agents import (
+    APIConnectOptions,
+    APIStatusError,
+    APITimeoutError,
+    stt,
+    utils,
+)
 from livekit.agents.stt import SpeechEventType, STTCapabilities
 from livekit.agents.utils import AudioBuffer, merge_frames
 from livekit.plugins.clova.constants import CLOVA_INPUT_SAMPLE_RATE

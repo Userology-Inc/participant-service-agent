@@ -3,7 +3,15 @@ import logging
 from dotenv import load_dotenv
 
 from livekit import rtc
-from livekit.agents import AutoSubscribe, JobContext, JobProcess, WorkerOptions, cli, llm, metrics
+from livekit.agents import (
+    AutoSubscribe,
+    JobContext,
+    JobProcess,
+    WorkerOptions,
+    cli,
+    llm,
+    metrics,
+)
 from livekit.agents.pipeline import VoicePipelineAgent
 from livekit.plugins import deepgram, openai, silero
 
@@ -19,8 +27,8 @@ async def entrypoint(ctx: JobContext):
     initial_ctx = llm.ChatContext().append(
         role="system",
         text=(
-            "You are a voice assistant created by LiveKit. Your interface with users will be voice. "
-            "You should use short and concise responses, and avoiding usage of unpronouncable punctuation."
+            "You are a voice assistant created by LiveKit. Your interface with users will be voice. "  # noqa: E501
+            "You should use short and concise responses, and avoiding usage of unpronouncable punctuation."  # noqa: E501
         ),
     )
 

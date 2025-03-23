@@ -20,14 +20,14 @@ import setuptools.command.build_py
 
 here = pathlib.Path(__file__).parent.resolve()
 about = {}
-with open(os.path.join(here, "livekit", "plugins", "neuphonic", "version.py")) as f:
+with open(os.path.join(here, "livekit", "plugins", "aws", "version.py")) as f:
     exec(f.read(), about)
 
 
 setuptools.setup(
-    name="livekit-plugins-neuphonic",
+    name="livekit-plugins-aws",
     version=about["__version__"],
-    description="LiveKit Agents Plugin for Neuphonic",
+    description="LiveKit Agents Plugin for services from AWS",
     long_description=(here / "README.md").read_text(encoding="utf-8"),
     long_description_content_type="text/markdown",
     url="https://github.com/livekit/agents",
@@ -43,11 +43,16 @@ setuptools.setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3 :: Only",
     ],
-    keywords=["webrtc", "realtime", "audio", "video", "livekit"],
+    keywords=["webrtc", "realtime", "audio", "video", "livekit", "aws"],
     license="Apache-2.0",
     packages=setuptools.find_namespace_packages(include=["livekit.*"]),
     python_requires=">=3.9.0",
-    install_requires=["livekit-agents>=0.12.16,<1.0.0"],
+    install_requires=[
+        "livekit-agents[codecs]>=0.12.16,<1.0.0",
+        "aiobotocore==2.19.0",
+        "boto3==1.36.3",
+        "amazon-transcribe>=0.6.2",
+    ],
     project_urls={
         "Documentation": "https://docs.livekit.io",
         "Website": "https://livekit.io/",
