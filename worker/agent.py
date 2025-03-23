@@ -35,6 +35,7 @@ class ParticipantServiceAgent(Agent):
 async def entrypoint(ctx: JobContext):
     logger.info("Starting participant service agent")
     await ctx.connect()
+    
 
     session = AgentSession(
         stt=openai.STT(),
@@ -42,6 +43,7 @@ async def entrypoint(ctx: JobContext):
         tts=openai.TTS(),
         vad=silero.VAD.load(),
     )
+
     await session.start(agent=ParticipantServiceAgent(), room=ctx.room)
 
 
