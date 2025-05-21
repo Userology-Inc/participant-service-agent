@@ -1,0 +1,1 @@
+# Make plugins directory a proper Python package 
